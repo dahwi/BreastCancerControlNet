@@ -1,2 +1,6 @@
 # Ignore all files in the data directory
-/data/CBIS-DDSM/
+data/CBIS-DDSM/
+data/
+venv/
+.ipynb_checkpoints/
+*.ipynb
