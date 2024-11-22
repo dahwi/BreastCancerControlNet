@@ -1,7 +1,12 @@
+import glob
 import os
-import torch
-from torch.utils.data import Dataset
+import cv2
+import torchvision
+import numpy as np
 from PIL import Image
+from utils.diffusion_utils import load_latents
+from tqdm import tqdm
+from torch.utils.data.dataset import Dataset
 
 class UltrasoundBreastDataset(Dataset):
     def __init__(self, root_dir, transform=None, as_vector=False):
@@ -19,14 +24,13 @@ class UltrasoundBreastDataset(Dataset):
     def _load_data(self):
         """Load all image paths and labels from the directory structure."""
         data = []
-        for label_dir in os.listdir(self.root_dir):
-            label_dir_path = os.path.join(self.root_dir, label_dir)
+        for label in os.listdir(self.root_dir):
+            label_dir_path = os.path.join(self.root_dir, label)
             if os.path.isdir(label_dir_path):
-                # Assign labels: benign|normal -> 0, malignant -> 1
-                label = 0 if label_dir in ["benign", "normal"] else 1
+                # label = 0 if label_dir in ["benign", "normal"] else 1
                 for img_name in os.listdir(label_dir_path):
                     if "mask" not in img_name:  # Skip mask images
-                        img_path = os.path.join(label_dir, img_name)
+                        img_path = os.path.join(label, img_name)
                         data.append((img_path, label))
         return data
 
@@ -41,7 +45,7 @@ class UltrasoundBreastDataset(Dataset):
         full_img_path = os.path.join(self.root_dir, img_path)
         
         # Load the grayscale image
-        image = Image.open(full_img_path).convert("L")
+        image = Image.open(full_img_path) #.convert("L") intentionally commented out to keep the image in RGB format
         
         # Apply transformations
         if self.transform:
@@ -52,20 +56,3 @@ class UltrasoundBreastDataset(Dataset):
             image = image.view(-1)  # Flatten the tensor
         
         return image, label
-    
-    from torchvision import transforms
-
-# from torchvision import transforms
-# # Define transformations for grayscale images
-# transform = transforms.Compose([
-#     transforms.Resize((256, 256)),  # Resize to 256 * 256
-#     transforms.ToTensor(),          # Convert to tensor
-#     transforms.Normalize(mean=[0.5], std=[0.5])  # Normalize single-channel image
-# ])
-
-# # Create dataset for the directory structure
-# dataset = UltrasoundBreastDataset(
-#     root_dir="/Users/dahwi/DL/BreastCancerControlNet/data/Ultrasound-Breast-Image",
-#     transform=transform,
-#     as_vector=True  # Enable vector conversion
-# )
