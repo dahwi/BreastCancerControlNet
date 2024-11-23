@@ -18,10 +18,10 @@ def get_dataset(path, augment=False):
     """
     # Base transformations
     base_transform = transforms.Compose([
-        transforms.Grayscale(num_output_channels=3),  # Convert to RGB
+        # transforms.Grayscale(num_output_channels=3),  # Convert to RGB
         transforms.Resize((256, 256)),  # Resize to 256x256
-        transforms.ToTensor(),          # Convert to tensor
-        transforms.Normalize(mean=[0.5], std=[0.5])  # Normalize grayscale images
+        transforms.ToTensor(),          # Convert to tensor; will convert to 0 and 1
+        transforms.Normalize(mean=[0.5], std=[0.5])  # Normalize grayscale images to -1 and 1
     ])
 
     # Augmentation pipeline
@@ -29,7 +29,7 @@ def get_dataset(path, augment=False):
         augmentation_transform = transforms.Compose([
             transforms.RandomHorizontalFlip(p=0.8),
             transforms.RandomVerticalFlip(p=0.8),
-            transforms.RandomRotation(degrees=20),
+            transforms.RandomRotation(degrees=5),
             transforms.ColorJitter(brightness=0.2, contrast=0.2),
         ])
         transform = transforms.Compose([augmentation_transform, base_transform])
@@ -49,8 +49,7 @@ def show_sample_images(dataset, size=10):
     """
     Display sample images from the dataset.
     """
-
-    _, axs = plt.subplots(size//10 + 1, 10, figsize=(20, 20))
+    _, axs = plt.subplots(size//10+1, 10, figsize=(20, 20))
     for i in range(size):
         image, label = dataset[i]
         r = i // 10
@@ -61,7 +60,7 @@ def show_sample_images(dataset, size=10):
         axs[r,c].axis("off")
     plt.show()
 
-def denormalize(tensor, mean, std):
+def transformToGreyScale(tensor, mean, std):
     """
     Reverse normalization applied during preprocessing.
     Args:
@@ -73,7 +72,12 @@ def denormalize(tensor, mean, std):
     """
     mean = torch.tensor(mean).view(-1, 1, 1)  # Reshape to (C, 1, 1)
     std = torch.tensor(std).view(-1, 1, 1)    # Reshape to (C, 1, 1)
-    return tensor * std + mean  # Reverse normalization
+    denormalized = tensor * std + mean  # Reverse normalization
+    print(denormalized.shape)
+
+    denormalized = denormalized[0].unsqueeze(0)
+    print('after:',denormalized.shape)
+    return denormalized
 
 
 def save_augmented_dataset(dataset, output_dir):
@@ -94,13 +98,10 @@ def save_augmented_dataset(dataset, output_dir):
             print(label_dir)
             
             os.makedirs(label_dir, exist_ok=True)
-            
-            print(image.shape)
-            print(image)
-            denormalized_image = denormalize(image, mean=[0.5], std=[0.5])
+            image_greyscale = transformToGreyScale(image, mean=[0.5], std=[0.5])
 
             # Save augmented images
-            ToPILImage()(denormalized_image).save(os.path.join(label_dir, f"augmented_{label_path}_{i}.png"))
+            ToPILImage()(image_greyscale).save(os.path.join(label_dir, f"augmented_{label_path}_{i}.png"))
 
 def split_dataset(dataset, train_ratio=0.7, val_ratio=0.1):
     """
@@ -127,6 +128,7 @@ def train(model, train_loader, val_loader, optimizer, criterion, num_epochs=10, 
         nn.Softmax(dim=1)
     )
 
+    best_accuracy = 0.0
     best_model_weights = model.state_dict()  # Store the best weights
 
     for epoch in tqdm(range(num_epochs)):
@@ -145,7 +147,11 @@ def train(model, train_loader, val_loader, optimizer, criterion, num_epochs=10, 
         print(f"Epoch {epoch+1}, Loss: {running_loss/len(train_loader)}")
 
         # Validation
-        _, best_model_weights = evaluate(model, val_loader, device)
+        current_accuracy = evaluate(model, val_loader, device)
+        if current_accuracy > best_accuracy:
+                best_accuracy = current_accuracy
+                print(f"New best model saved with accuracy: {best_accuracy:.2f}%")
+                best_model_weights = {k: v.clone() for k, v in model.state_dict().items()}  
 
     model.load_state_dict(best_model_weights)
     torch.save(model, "best_model.pth")
@@ -165,13 +171,9 @@ def evaluate(model, data_loader, device="cpu"):
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-            current_accuracy = 100 * correct / total
-            if current_accuracy > accuracy:
-                accuracy = current_accuracy
-                print(f"New best model saved with accuracy: {accuracy:.2f}%")
-                best_model_weights = {k: v.clone() for k, v in model.state_dict().items()}        
-
-    return accuracy, best_model_weights
+        accuracy = 100 * correct / total
+                  
+    return accuracy
 
 def run(config_file_path):
     # Load configuration
@@ -180,11 +182,12 @@ def run(config_file_path):
 
     # Load dataset with augmentations
     dataset = get_dataset(config['data_dir'], augment=False)
-    show_sample_images(dataset, 35)
+    show_sample_images(dataset, 15)
 
     augmented_dataset = get_dataset(config['data_dir'], augment=True)
-    show_sample_images(augmented_dataset, 35)
-
+    show_sample_images(augmented_dataset, 15)
+    # # Uncomment if you want to save aug
+    # save_augmented_dataset(augmented_dataset, config['data_dir'])
     # Split into train, validation, and test sets
     train_set, val_set, test_set = split_dataset(dataset)
     print(f"Dataset loaded: {len(dataset)} samples")
@@ -205,5 +208,5 @@ def run(config_file_path):
 
     
 if __name__ == '__main__':
-    config_file_path = '../config/regular.yaml'
+    config_file_path = 'config/regular.yaml'
     run(config_file_path)
