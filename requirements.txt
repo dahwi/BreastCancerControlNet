@@ -1,5 +1,5 @@
-torch==2.5.1
-torchvision==0.20.1
+torch==2.3.1
+torchvision==0.18.1
 PyYAML
 matplotlib
 Pillow
