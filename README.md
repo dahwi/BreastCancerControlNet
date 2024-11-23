@@ -32,10 +32,10 @@ The project uses a dataset of breast images with labels ("cancerous" or "non-can
 - **Conditional Latent Vectors**: Used to guide image generation based on cancer/no-cancer labels.
 - **Evaluation Framework**: Combines perceptual and classification-based metrics to validate synthetic data. -->
 
-<!-- ## **Installation**
+## **Installation**
 Clone this repository and install the required dependencies:
 
 ```bash
-git clone https://github.com/yourusername/ControlBreast.git
-cd ControlBreast
-pip install -r requirements.txt -->
+git clone
+cd BreastCancerControlNet
+pip install -r requirements.txt
