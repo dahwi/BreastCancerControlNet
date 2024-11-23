@@ -119,6 +119,10 @@ def train(model, train_loader, val_loader, optimizer, criterion, num_epochs=10, 
     for param in model.features.parameters():
         param.requires_grad = False
 
+    # Ensure classifier[6] parameters are trainable
+    for param in model.classifier[6].parameters():
+        param.requires_grad = True  # Enable gradient computation for classifier[6]
+
     # Replace the classifier
     model.classifier[6] = nn.Sequential(
         nn.Linear(4096, 512),
@@ -126,10 +130,10 @@ def train(model, train_loader, val_loader, optimizer, criterion, num_epochs=10, 
         nn.Dropout(0.5),
         nn.Linear(512, 3),  # Adjust num_classes for your dataset
         nn.Softmax(dim=1)
-    )
+    ).to(device)
 
     best_accuracy = 0.0
-    best_model_weights = model.state_dict()  # Store the best weights
+    best_model_weights = {k: v.clone() for k, v in model.state_dict().items()}  # Store the best weights
 
     for epoch in tqdm(range(num_epochs)):
         model.train()
@@ -200,7 +204,7 @@ def run(config_file_path):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     model = models.vgg16(weights=VGG16_Weights.IMAGENET1K_V1).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.classifier[6].parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss()
     trained_model = train(model, train_loader, val_loader, optimizer, criterion, num_epochs=10, device=device)
     test_accuracy, _ = evaluate(test_loader, trained_model, device=device)
