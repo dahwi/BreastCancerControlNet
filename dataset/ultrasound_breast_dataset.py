@@ -1,10 +1,6 @@
-import glob
 import os
-import cv2
-import torchvision
-import numpy as np
+import torch
 from PIL import Image
-from utils.diffusion_utils import load_latents
 from tqdm import tqdm
 from torch.utils.data.dataset import Dataset
 
@@ -24,13 +20,19 @@ class UltrasoundBreastDataset(Dataset):
     def _load_data(self):
         """Load all image paths and labels from the directory structure."""
         data = []
-        for label in os.listdir(self.root_dir):
-            label_dir_path = os.path.join(self.root_dir, label)
+        for label_dir in tqdm(os.listdir(self.root_dir)):
+            label_dir_path = os.path.join(self.root_dir, label_dir)
+            label = 1  # Default to normal
             if os.path.isdir(label_dir_path):
-                # label = 0 if label_dir in ["benign", "normal"] else 1
+                if label_dir == "benign":
+                    label = 0
+                elif label_dir == "normal":
+                    label = 1
+                elif label_dir == "malignant":
+                    label = 2
                 for img_name in os.listdir(label_dir_path):
                     if "mask" not in img_name:  # Skip mask images
-                        img_path = os.path.join(label, img_name)
+                        img_path = os.path.join(label_dir, img_name)
                         data.append((img_path, label))
         return data
 
@@ -45,8 +47,7 @@ class UltrasoundBreastDataset(Dataset):
         full_img_path = os.path.join(self.root_dir, img_path)
         
         # Load the grayscale image
-        image = Image.open(full_img_path) #.convert("L") intentionally commented out to keep the image in RGB format
-        
+        image = Image.open(full_img_path).convert("L") 
         # Apply transformations
         if self.transform:
             image = self.transform(image)
