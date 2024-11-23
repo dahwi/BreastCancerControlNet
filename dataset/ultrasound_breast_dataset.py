@@ -47,7 +47,7 @@ class UltrasoundBreastDataset(Dataset):
         full_img_path = os.path.join(self.root_dir, img_path)
         
         # Load the grayscale image
-        image = Image.open(full_img_path).convert("L") 
+        image = Image.open(full_img_path)#.convert("L") 
         # Apply transformations
         if self.transform:
             image = self.transform(image)
