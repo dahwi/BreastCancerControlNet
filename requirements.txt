@@ -4,3 +4,4 @@ PyYAML
 matplotlib
 Pillow
 tqdm
+diffusers

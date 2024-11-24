@@ -94,7 +94,7 @@ def save_augmented_dataset(dataset, output_dir):
                 label_path = "benign"
             elif label == 2:
                 label_path = "malignant"
-            label_dir = os.path.join(output_dir, label_path)
+            label_dir = os.path.join(output_dir, label_path, "augmented")
             print(label_dir)
             
             os.makedirs(label_dir, exist_ok=True)
@@ -121,7 +121,7 @@ def train(model, train_loader, val_loader, optimizer, criterion, num_epochs=10, 
 
     # Ensure classifier[6] parameters are trainable
     for param in model.classifier[6].parameters():
-        param.requires_grad = True  # Enable gradient computation for classifier[6]
+        param.requires_grad = False  # Enable gradient computation for classifier[6]
 
     # Replace the classifier
     model.classifier[6] = nn.Sequential(
@@ -191,7 +191,7 @@ def run(config_file_path):
     augmented_dataset = get_dataset(config['data_dir'], augment=True)
     show_sample_images(augmented_dataset, 15)
     # # Uncomment if you want to save aug
-    # save_augmented_dataset(augmented_dataset, config['data_dir'])
+    save_augmented_dataset(augmented_dataset, config['data_dir'])
     # Split into train, validation, and test sets
     train_set, val_set, test_set = split_dataset(dataset)
     print(f"Dataset loaded: {len(dataset)} samples")
