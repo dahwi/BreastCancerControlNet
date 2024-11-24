@@ -23,10 +23,12 @@ def run(config_file_path):
     show_sample_images(augmented_dataset, 15)
     # # Uncomment if you want to save aug
     # save_augmented_dataset(augmented_dataset, config['data_dir'])
+
     # Split into train, validation, and test sets
     train_set, val_set, test_set = split_dataset(dataset)
     print(f"Dataset loaded: {len(dataset)} samples")
     print(f"Train: {len(train_set)}, Validation: {len(val_set)}, Test: {len(test_set)}")
+
     # Create DataLoaders
     train_loader = DataLoader(train_set, batch_size=8, shuffle=True)
     val_loader = DataLoader(val_set, batch_size=8, shuffle=False)
@@ -34,8 +36,9 @@ def run(config_file_path):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
+
     model = models.vgg16(weights=VGG16_Weights.IMAGENET1K_V1).to(device)
-        # Freeze earlier layers (optional, depending on dataset size)
+    # Freeze earlier layers (optional, depending on dataset size)
     for param in model.features.parameters():
         param.requires_grad = False
 
@@ -53,6 +56,8 @@ def run(config_file_path):
     ).to(device)
     optimizer = torch.optim.Adam(model.classifier[6].parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss()
+
+    # Train and evaluate
     trained_model = train(model, train_loader, val_loader, optimizer, criterion, num_epochs=10, device=device)
     test_accuracy, _ = evaluate(test_loader, trained_model, device=device)
     print(f"Test accuracy: {test_accuracy:.2f}%")

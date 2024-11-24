@@ -30,6 +30,7 @@ def train(model, output_path, train_loader, val_loader, optimizer, criterion, nu
 
     model.load_state_dict(best_model_weights)
     torch.save(model, output_path)
+    print(f"Best model saved at {output_path}")
 
     return model
 
