@@ -1,1 +1,4 @@
-data_dir: "/Users/dahwi/DL/BreastCancerControlNet/data/Ultrasound-Breast-Image"
+data_dir: '/Users/dahwi/DL/BreastCancerControlNet/data/Ultrasound-Breast-Image'
+output_dir: '/Users/dahwi/DL/BreastCancerControlNet/output'
+model: 'reg_augmented'
+filename: 'model.pth'
