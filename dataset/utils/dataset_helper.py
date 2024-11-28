@@ -7,15 +7,15 @@ from torch.utils.data import random_split
 from torchvision import transforms
 from torchvision.transforms import ToPILImage
 
-def get_dataset(dataset_class, path, augment=False):
+def get_dataset(dataset_class, path, width, height, mean, std, augment=False):
     """
     Load the dataset and apply augmentations if required.
     """
     # Base transformations
     base_transform = transforms.Compose([
-        transforms.Resize((256, 256)),  # Resize to 256x256
+        transforms.Resize((width, height)),  # Resize to 256x256
         transforms.ToTensor(),          # Convert to tensor; will convert to 0 and 1
-        transforms.Normalize(mean=[0.5], std=[0.5])  # Normalize grayscale images to -1 and 1
+        transforms.Normalize(mean=mean, std=std)  # Normalize grayscale images to -1 and 1
     ])
 
     # Augmentation pipeline

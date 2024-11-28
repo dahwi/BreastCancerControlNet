@@ -1,13 +1,19 @@
 import torch
+import wandb
 from tqdm import tqdm
 
-def train(model, output_path, train_loader, val_loader, optimizer, criterion, num_epochs=10, device="cpu"):
+def train(model, output_path, train_loader, val_loader, optimizer, criterion, num_epochs=10, device="cpu", wandb_log=False):
+    if wandb_log:
+         wandb.init(project="ultrasound-breast-cancer", name=model.name)
     best_accuracy = 0.0
     best_model_weights = None
 
     for epoch in tqdm(range(num_epochs)):
         model.train()
         running_loss = 0.0
+        correct = 0
+        total = 0
+        train_accuracy = 0.0
         for images, labels in tqdm(train_loader):
             images, labels = images.to(device), labels.to(device)
             
@@ -16,13 +22,30 @@ def train(model, output_path, train_loader, val_loader, optimizer, criterion, nu
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
+
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
             
             running_loss += loss.item()
-        print(f"Epoch {epoch+1}, Loss: {running_loss/len(train_loader)}")
+        
+        train_accuracy = 100 * correct / total              
+        epoch_loss = running_loss/len(train_loader)
+        print(f"Epoch {epoch+1}, Loss: {epoch_loss}, Train accuracy: {train_accuracy:.2f}%")
 
         # Validation
         val_accuracy = evaluate(model, val_loader, device)
         print(f"Validation accuracy: {val_accuracy:.2f}%")
+
+        # Log metrics to wandb
+        if wandb_log:
+            wandb.log({
+                "epoch": epoch + 1,
+                "train_loss": epoch_loss,
+                "train_accuracy": train_accuracy,
+                "val_accuracy": val_accuracy
+            })
+
         if val_accuracy > best_accuracy:
                 best_accuracy = val_accuracy
                 print(f"New best model saved with accuracy: {best_accuracy:.2f}%")

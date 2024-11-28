@@ -1,4 +1,5 @@
 import yaml
+import wandb
 import torch
 import torch.nn as nn
 
@@ -15,12 +16,12 @@ def run(config_file_path):
     with open(config_file_path, "r") as f:
         config = yaml.safe_load(f)
 
-    # Load dataset with augmentations
-    dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], augment=False)
-    show_sample_images(dataset, 15)
+    # Load dataset without augmentations
+    dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 224, 224, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225], augment=False)
+    # show_sample_images(dataset, 15)
 
-    augmented_dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], augment=True)
-    show_sample_images(augmented_dataset, 15)
+    # augmented_dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], augment=True)
+    # show_sample_images(augmented_dataset, 15)
     # # Uncomment if you want to save aug
     # save_augmented_dataset(augmented_dataset, config['data_dir'])
 
@@ -30,14 +31,15 @@ def run(config_file_path):
     print(f"Train: {len(train_set)}, Validation: {len(val_set)}, Test: {len(test_set)}")
 
     # Create DataLoaders
-    train_loader = DataLoader(train_set, batch_size=8, shuffle=True)
-    val_loader = DataLoader(val_set, batch_size=8, shuffle=False)
-    test_loader = DataLoader(test_set, batch_size=8, shuffle=False)
+    train_loader = DataLoader(train_set, batch_size=16, shuffle=True)
+    val_loader = DataLoader(val_set, batch_size=16, shuffle=False)
+    test_loader = DataLoader(test_set, batch_size=16, shuffle=False)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
     model = models.vgg16(weights=VGG16_Weights.IMAGENET1K_V1).to(device)
+    model.name = 'baseline'
     # Freeze earlier layers (optional, depending on dataset size)
     for param in model.features.parameters():
         param.requires_grad = False
@@ -57,8 +59,9 @@ def run(config_file_path):
     optimizer = torch.optim.Adam(model.classifier[6].parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss()
 
+    wandb.login(key=config['wandb_key'])
     # Train and evaluate
-    trained_model = train(model, train_loader, val_loader, optimizer, criterion, num_epochs=10, device=device)
+    trained_model = train(model, train_loader, val_loader, optimizer, criterion, num_epochs=10, device=device, wandb_log=True)
     test_accuracy, _ = evaluate(test_loader, trained_model, device=device)
     print(f"Test accuracy: {test_accuracy:.2f}%")
 
