@@ -1,14 +1,14 @@
 import yaml
 import wandb
+import os
 import torch
 import torch.nn as nn
 
-from tqdm import tqdm
 from torch.utils.data import DataLoader
 from torchvision import models
 from torchvision.models import VGG16_Weights
 from dataset.ultrasound_breast_dataset import UltrasoundBreastDataset
-from dataset.utils.dataset_helper import get_dataset, show_sample_images, split_dataset
+from dataset.dataset_helper import get_dataset, show_sample_images, split_dataset
 from model.utils import train, evaluate
 
 def run(config_file_path):
@@ -60,9 +60,10 @@ def run(config_file_path):
     criterion = nn.CrossEntropyLoss()
 
     wandb.login(key=config['wandb_key'])
+    output_path = os.path.join(config['output_dir'], config['model'], config['filename'])
     # Train and evaluate
-    trained_model = train(model, train_loader, val_loader, optimizer, criterion, num_epochs=10, device=device, wandb_log=True)
-    test_accuracy, _ = evaluate(test_loader, trained_model, device=device)
+    trained_model = train(model, output_path, train_loader, val_loader, optimizer, criterion, num_epochs=10, device=device, wandb_log=True)
+    test_accuracy = evaluate(trained_model, test_loader, device=device)
     print(f"Test accuracy: {test_accuracy:.2f}%")
 
     
