@@ -1,3 +1,5 @@
-data_dir: "/Users/dahwi/DL/BreastCancerControlNet/data/Ultrasound-Breast-Image"
-
+data_dir: '/Users/dahwi/DL/BreastCancerControlNet/data/Ultrasound-Breast-Image'
+output_dir: '/Users/dahwi/DL/BreastCancerControlNet/output'
+model: 'reg_augmented'
+filename: 'model.pth'
 wandb_key: "9172fb113e07d174f618e9042047cc5c4adacc0f"
