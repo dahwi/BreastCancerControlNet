@@ -4,7 +4,7 @@ import os
 import torch
 import torch.nn as nn
 
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, ConcatDataset
 from torchvision import models
 from torchvision.models import VGG16_Weights
 from dataset.ultrasound_breast_dataset import UltrasoundBreastDataset
@@ -20,13 +20,15 @@ def run(config_file_path):
     dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 224, 224, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225], augment=False)
     # show_sample_images(dataset, 15)
 
-    # augmented_dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], augment=True)
+    augmented_dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 224, 224, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225], augment=True)
     # show_sample_images(augmented_dataset, 15)
     # # Uncomment if you want to save aug
     # save_augmented_dataset(augmented_dataset, config['data_dir'])
+    combined_dataset = ConcatDataset([dataset, augmented_dataset])
 
+    
     # Split into train, validation, and test sets
-    train_set, val_set, test_set = split_dataset(dataset)
+    train_set, val_set, test_set = split_dataset(combined_dataset)
     print(f"Dataset loaded: {len(dataset)} samples")
     print(f"Train: {len(train_set)}, Validation: {len(val_set)}, Test: {len(test_set)}")
 
@@ -60,7 +62,7 @@ def run(config_file_path):
     criterion = nn.CrossEntropyLoss()
 
     wandb.login(key=config['wandb_key'])
-    output_path = os.path.join(config['output_dir'], config['model'], config['filename'])
+    output_path = os.path.join(config['output_dir'], config['model']['baseline'])
     # Train and evaluate
     trained_model = train(model, output_path, train_loader, val_loader, optimizer, criterion, num_epochs=10, device=device, wandb_log=True)
     test_accuracy = evaluate(trained_model, test_loader, device=device)

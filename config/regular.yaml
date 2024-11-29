@@ -1,5 +1,7 @@
-data_dir: '/Users/dahwi/DL/BreastCancerControlNet/data/Ultrasound-Breast-Image'
-output_dir: '/Users/dahwi/DL/BreastCancerControlNet/output'
-model: 'reg_augmented'
-filename: 'model.pth'
+data_dir: '/home/dk865/BreastCancerControlNet/data/Ultrasound-Breast-Image'
+output_dir: '/home/dk865/BreastCancerControlNet/model/output'
 wandb_key: "9172fb113e07d174f618e9042047cc5c4adacc0f"
+model:
+  baseline: baseline_model.pth
+  regular: reg_augmentation_model.pth
+  stable_diffusion: stable_diffusion_model.pth

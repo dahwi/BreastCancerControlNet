@@ -4,3 +4,7 @@ PyYAML
 matplotlib
 Pillow
 tqdm
+wandb
+diffusers
+transformers
+accelerate
