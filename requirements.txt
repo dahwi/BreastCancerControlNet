@@ -8,3 +8,5 @@ wandb
 diffusers
 transformers
 accelerate
+opencv-python
+peft
