@@ -70,5 +70,5 @@ def run(config_file_path):
 
     
 if __name__ == '__main__':
-    config_file_path = 'config/regular.yaml'
+    config_file_path = 'config/config.yaml'
     run(config_file_path)
