@@ -4,7 +4,10 @@ PyYAML
 matplotlib
 Pillow
 tqdm
+wandb
 diffusers
 transformers
 accelerate
+opencv-python
+peft
 numpy

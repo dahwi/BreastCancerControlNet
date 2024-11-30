@@ -1,23 +1,21 @@
 import os
 import matplotlib.pyplot as plt
 import torch
-import torch.nn as nn
 
 from tqdm import tqdm
 from torch.utils.data import random_split
 from torchvision import transforms
 from torchvision.transforms import ToPILImage
 
-def get_dataset(dataset_class, path, augment=False):
+def get_dataset(dataset_class, path, width, height, mean, std, augment=False):
     """
     Load the dataset and apply augmentations if required.
     """
     # Base transformations
     base_transform = transforms.Compose([
-        # transforms.Grayscale(num_output_channels=3),  # Convert to RGB
-        transforms.Resize((256, 256)),  # Resize to 256x256
+        transforms.Resize((width, height)),  # Resize to 256x256
         transforms.ToTensor(),          # Convert to tensor; will convert to 0 and 1
-        transforms.Normalize(mean=[0.5], std=[0.5])  # Normalize grayscale images to -1 and 1
+        transforms.Normalize(mean=mean, std=std)  # Normalize grayscale images to -1 and 1
     ])
 
     # Augmentation pipeline
@@ -45,6 +43,7 @@ def show_sample_images(dataset, size=10):
     """
     Display sample images from the dataset.
     """
+    assert size >= 10, "Size should be at least 10"
     _, axs = plt.subplots(size//10+1, 10, figsize=(20, 20))
     for i in range(size):
         image, label = dataset[i]
@@ -68,31 +67,37 @@ def transformToGreyScale(tensor, mean, std):
     """
     mean = torch.tensor(mean).view(-1, 1, 1)  # Reshape to (C, 1, 1)
     std = torch.tensor(std).view(-1, 1, 1)    # Reshape to (C, 1, 1)
-    denormalized = tensor * std + mean  # Reverse normalization
-    print(denormalized.shape)
+    transformed = tensor * std + mean  # Reverse normalization
 
-    denormalized = denormalized[0].unsqueeze(0)
-    print('after:',denormalized.shape)
-    return denormalized
+    transformed = transformed[0].unsqueeze(0)
+    return transformed
 
 
-def save_augmented_dataset(dataset, output_dir):
+def save_augmented_dataset(dataset, output_dir, output_size=5):
     """
-    Save augmented images to disk, effectively increasing dataset size.
+    Saves an augmented dataset to the specified output directory.
+    Parameters:
+    dataset (iterable): The dataset containing images and labels.
+    output_dir (str): The directory where the augmented dataset will be saved.
+    output_size (int, optional): The number of images to save. Defaults to 5.
+    The function creates subdirectories within the output directory based on the label of each image:
+    - "benign" for label 0
+    - "normal" for label 1
+    - "malignant" for label 2
+    Each image is converted to greyscale and saved in the corresponding subdirectory with a filename
+    in the format "augmented_<label>_<index>.png".
     """
     os.makedirs(output_dir, exist_ok=True)
 
     for i, (image, label) in tqdm(enumerate(dataset)):
-        if i < 5:
-            print(label)
+        if i < output_size:
             label_path = "normal"
             if label == 0:
                 label_path = "benign"
             elif label == 2:
                 label_path = "malignant"
-            label_dir = os.path.join(output_dir, label_path)
-            print(label_dir)
-            
+
+            label_dir = os.path.join(output_dir, label_path)            
             os.makedirs(label_dir, exist_ok=True)
             image_greyscale = transformToGreyScale(image, mean=[0.5], std=[0.5])
 
