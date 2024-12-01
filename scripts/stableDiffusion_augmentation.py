@@ -23,6 +23,8 @@ def main(config_file_path):
     run('stable_diffusion', combined_dataset, config, device)
 
 
+   # fine_tune(config, dataset, device, 5, True)
+    
 if __name__ == '__main__':
     config_file_path = 'config/config.yaml'
     main(config_file_path)
