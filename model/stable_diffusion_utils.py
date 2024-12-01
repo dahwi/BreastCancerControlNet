@@ -1,5 +1,6 @@
 import torch
 import os
+import wandb
 from tqdm import tqdm
 from diffusers import StableDiffusionPipeline
 from peft import LoraConfig, get_peft_model
@@ -11,7 +12,9 @@ from torch import autocast
 label_map = {0: "benign", 1: "malignant", 2: "normal"}  # Map integer labels to strings
 
 
-def fine_tune(config, dataset, device, epochs=5):
+def fine_tune(config, dataset, device, epochs=5, wandb_log=False):
+    if wandb_log:
+         wandb.init(project="ultrasound-breast-cancer", name='stable diffusion fine-tuning')
     data_loader = DataLoader(dataset, batch_size=2, shuffle=True)
     output_dir = "/home/dk865/BreastCancerControlNet/data/augmented_from_finetuned_sd"
     os.makedirs(output_dir, exist_ok=True)
@@ -38,14 +41,8 @@ def fine_tune(config, dataset, device, epochs=5):
         "malignant": "Grayscale mammogram cross-section image with an irregular, hypoechoic dark region, spiculated edges, disrupted fibrous layers, and acoustic shadowing beneath the lesion, no text in the image",
         "normal": "Grayscale mammogram cross-section image with smooth, uniform fibrous layers, consistent textures, and gradual transitions between light and dark regions across the tissue, no text in the image"
     }
-
-    text_condition = {
-        "benign": "Benign mammogram grayscale cross-section breast image containing a smooth, well-defined, round or oval mass with clear boundaries",
-        "malignant": "Malignant mammogram grayscale cross-section breast image containing an irregular shape, spiculated edges, and may appear denser with indistinct borders",
-        "normal": "Normal mammogram grayscale cross-section breast image containing no leison"
-    }
     
-    for epoch in range(epochs):  # Adjust epochs based on dataset size
+    for epoch in tqdm(range(epochs)):  
         for batch, labels in tqdm(data_loader):
             batch, labels = batch.to(device), labels.to(device)
 
@@ -77,7 +74,9 @@ def fine_tune(config, dataset, device, epochs=5):
             optimizer.zero_grad()
         
         print(f"Epoch {epoch+1} Loss: {loss.item()}")
-
+        # Log metrics to wandb
+        if wandb_log:
+            wandb.log({"epoch": epoch + 1, "train_loss": loss.item()})
 
         num_images = 200  # Number of images to generate per prompt
 
