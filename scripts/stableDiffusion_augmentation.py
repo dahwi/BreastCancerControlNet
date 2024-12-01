@@ -14,9 +14,8 @@ def main(config_file_path):
     print(f"Using device: {device}")
 
     dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 256, 256, [0.5], [0.5], augment=False)
-    fine_tune(config, dataset, device)
-
-
+    fine_tune(config, dataset, device, 5, True)
+    
 if __name__ == '__main__':
     config_file_path = 'config/config.yaml'
     main(config_file_path)
