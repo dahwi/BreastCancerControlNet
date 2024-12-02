@@ -1,6 +1,7 @@
 import torch
 import os
 import wandb
+from torch.optim.lr_scheduler import StepLR
 from tqdm import tqdm
 from diffusers import StableDiffusionPipeline
 from peft import LoraConfig, get_peft_model
@@ -9,17 +10,21 @@ from torch.optim import Adam
 from torch import autocast
 
 
-label_map = {0: "benign", 1: "malignant", 2: "normal"}  # Map integer labels to strings
+label_map = {0: "benign", 1: "normal", 2: "malignant"}  # Map integer labels to strings
+text_prompts = {
+    "benign": "Grayscale mammogram cross-section image with an oval, dark hypoechoic region, smooth well-defined borders, surrounded by lighter, layered fibrous structures, no text in the image",
+    "malignant": "Grayscale mammogram cross-section image with an irregular, hypoechoic dark region, spiculated edges, disrupted fibrous layers, and acoustic shadowing beneath the lesion, no text in the image",
+    "normal": "Grayscale mammogram cross-section image with smooth, uniform fibrous layers, consistent textures, and gradual transitions between light and dark regions across the tissue, no text in the image"
+}
 
-
-def fine_tune(config, dataset, device, epochs=5, wandb_log=False):
+def fine_tune(config, dataset, device, key, epochs=5, wandb_log=False):
     if wandb_log:
          wandb.init(project="ultrasound-breast-cancer", name='stable diffusion fine-tuning')
     data_loader = DataLoader(dataset, batch_size=2, shuffle=True)
-    output_dir = "/home/dk865/BreastCancerControlNet/data/augmented_from_finetuned_sd"
+    output_dir = config['sd_ft_augument_dir']
     os.makedirs(output_dir, exist_ok=True)
     # Load SD1.5 model
-    pipe = StableDiffusionPipeline.from_pretrained("stable-diffusion-v1-5/stable-diffusion-v1-5")
+    pipe = StableDiffusionPipeline.from_pretrained("stable-diffusion-v1-5/stable-diffusion-v1-5", safety_checker=None)
     pipe.scheduler.set_timesteps(pipe.scheduler.num_train_timesteps)
 
     lora_config = LoraConfig(
@@ -35,13 +40,8 @@ def fine_tune(config, dataset, device, epochs=5, wandb_log=False):
     pipe.to(device)
 
     optimizer = Adam(pipe.unet.parameters(), lr=1e-4)
+    scheduler = StepLR(optimizer, step_size=2, gamma=0.5)  # Decay LR by 0.5 every 2 epochs
 
-    text_prompts = {
-        "benign": "Grayscale mammogram cross-section image with an oval, dark hypoechoic region, smooth well-defined borders, surrounded by lighter, layered fibrous structures, no text in the image",
-        "malignant": "Grayscale mammogram cross-section image with an irregular, hypoechoic dark region, spiculated edges, disrupted fibrous layers, and acoustic shadowing beneath the lesion, no text in the image",
-        "normal": "Grayscale mammogram cross-section image with smooth, uniform fibrous layers, consistent textures, and gradual transitions between light and dark regions across the tissue, no text in the image"
-    }
-    
     for epoch in tqdm(range(epochs)):  
         for batch, labels in tqdm(data_loader):
             batch, labels = batch.to(device), labels.to(device)
@@ -77,18 +77,19 @@ def fine_tune(config, dataset, device, epochs=5, wandb_log=False):
         # Log metrics to wandb
         if wandb_log:
             wandb.log({"epoch": epoch + 1, "train_loss": loss.item()})
+        scheduler.step()  # Update the learning rate`
+    num_images = 200  # Number of images to generate per prompt
 
-        num_images = 200  # Number of images to generate per prompt
-
-        for key, prompt in text_prompts.items():
-            for j in range(num_images):
-                with autocast(device_type='cuda', dtype=torch.float16):
-                    image = pipe(prompt).images[0]  # Generate an image
-                os.makedirs(f"{output_dir}/{epoch}", exist_ok=True)
-                filename = f"{output_dir}/{epoch}/{key}_{j}.png"
-                image.save(filename)  # Save the image
-                # print(f"Saved: {filename}")
-            print(f'Complete creating augmented images for {key}')
+    prompt = text_prompts[key]
+    os.makedirs(f"{output_dir}/{key}", exist_ok=True)
+    for j in range(num_images):
+        with autocast(device_type='cuda', dtype=torch.float16):
+            image = pipe(prompt).images[0]  # Generate an image
+        # os.makedirs(f"{output_dir}/{epoch}", exist_ok=True)
+        filename = f"{output_dir}/{key}/{key}_{j}.png"
+        image.save(filename)  # Save the image
+        # print(f"Saved: {filename}")
+    print(f'Complete creating augmented images for {key}')
 
     # Save fine-tuned LoRA weights
     model_output_dir = os.path.join(config['output_dir'], config['model']['stable_diffusion'])

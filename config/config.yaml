@@ -1,6 +1,6 @@
-data_dir: '/home/diyaparmar/BreastCancerControlNet/data/Ultrasound-Breast-Image'
-sd_ft_agument_dir: '/home/diyaparmar/BreastCancerControlNet/data/augmented_finetuned_sd'
-output_dir: '/home/diyaparmar/BreastCancerControlNet/model/output'
+data_dir: '/home/dk865/BreastCancerControlNet/data/Ultrasound-Breast-Image'
+sd_ft_augument_dir: '/home/dk865/BreastCancerControlNet/data/augmented_from_finetuned_sd'
+output_dir: '/home/dk865/BreastCancerControlNet/model/output'
 wandb_key: "9172fb113e07d174f618e9042047cc5c4adacc0f"
 model:
   baseline: baseline_model.pth
