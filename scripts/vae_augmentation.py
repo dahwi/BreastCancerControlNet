@@ -17,6 +17,8 @@ def main(config_file_path):
     # Load configuration
     with open(config_file_path, "r") as f:
         config = yaml.safe_load(f)
+    
+    vae_config = config['vae']
 
     # Argument parsing
     parser = argparse.ArgumentParser(description="VAE Augmentation: Script to train, generate, or evaluate accuracy.")
@@ -27,20 +29,21 @@ def main(config_file_path):
 
     args = parser.parse_args()
 
+    dataset = get_dataset_vae(config['data_dir'])
+
     # Train the VAE
     if args.train:
-        dataset = get_dataset_vae(config['data_dir'])
-        dataloader = DataLoader(dataset, batch_size=config['batch_size'], shuffle=True)
-        train(dataloader, config['latent_dim'], config['num_classes'], config['input_channels'], config['num_epochs'])
+        dataloader = DataLoader(dataset, batch_size=vae_config['batch_size'], shuffle=True)
+        train(dataloader, vae_config['latent_dim'], vae_config['num_classes'], vae_config['input_channels'], vae_config['num_epochs'])
     
     # Generate samples
     elif args.generate:
-        vae = ClassConditionedVAE(config['input_channels'], config['latent_dim'], config['num_classes'])
+        vae = ClassConditionedVAE(vae_config['input_channels'], vae_config['latent_dim'], vae_config['num_classes'])
         model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models', 'vae.pth')
         vae.load_state_dict(torch.load(model_path))
 
-        for i in range(config['num_classes']):
-            sample(vae, i, int(len(dataset) / config['num_classes']), config['latent_dim'], config['num_classes'])
+        for i in range(vae_config['num_classes']):
+            sample(vae, i, int(len(dataset) / vae_config['num_classes']), vae_config['latent_dim'], vae_config['num_classes'])
 
     # Evaluate accuracy
     elif args.accuracy:
@@ -48,22 +51,17 @@ def main(config_file_path):
         print(f"Using device: {device}")
         
         # Original dataset
-        dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 224, 224, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225], augment=False)
+        dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 256, 256, [0.5], [0.5], augment=False)
         # Load dataset with augmentations
-        augmented_dataset = get_dataset(UltrasoundBreastDataset, config['augmented_dir'], 224, 224, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225], augment=True)
+        augmented_dataset = get_dataset(UltrasoundBreastDataset, config['vae_augmented_dir'], 256, 256, [0.5], [0.5], augment=False)
         combined_dataset = ConcatDataset([dataset, augmented_dataset])
-        
-        print("length of dataset: ", len(dataset))
-        print("length of augmented dataset: ", len(augmented_dataset))
-        print("length of combined dataset: ", len(combined_dataset))
-        print(combined_dataset[0][0].shape)
 
-        # run('baseline', combined_dataset, config, device)
+        run('vae', combined_dataset, config, device)
 
     else:
         print("Please specify a valid flag: --train, --generate, or --accuracy.")
     
 
 if __name__ == '__main__':
-    config_file_path = 'config/vae.yaml'
+    config_file_path = 'config/config.yaml'
     main(config_file_path)

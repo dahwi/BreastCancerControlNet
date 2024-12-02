@@ -72,7 +72,6 @@ def train(dataloader, latent_dim, num_classes, input_channels, num_epochs=20):
             best_model_weights = {k: v.clone() for k, v in model.state_dict().items()}
             print(f"New best model saved with loss: {best_loss:.4f}")
 
-    # TODO: save the best model based on loss, change model save path to config-defined
     # Save the model
     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     models_dir = os.path.join(parent_dir, 'scripts', 'models')

@@ -118,6 +118,6 @@ def run(name, dataset, config, device):
     wandb.login(key=config['wandb_key'])
     output_path = os.path.join(config['output_dir'], config['model'][name])
     # Train and evaluate
-    trained_model = train(model, output_path, train_loader, val_loader, optimizer, criterion, num_epochs=10, device=device, wandb_log=True)
+    trained_model = train(model, output_path, train_loader, val_loader, optimizer, criterion, num_epochs=20, device=device, wandb_log=True)
     test_accuracy = evaluate(trained_model, test_loader, device=device)
     print(f"Test accuracy: {test_accuracy:.2f}%")
