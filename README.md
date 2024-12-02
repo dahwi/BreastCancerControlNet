@@ -39,3 +39,4 @@ Clone this repository and install the required dependencies:
 git clone
 cd BreastCancerControlNet
 pip install -r requirements.txt
+export PYTHONPATH=/PATH_TO_PROJECT/BreastCancerControlNet:$PYTHONPATH
