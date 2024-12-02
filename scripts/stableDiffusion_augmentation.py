@@ -17,7 +17,7 @@ def main(config_file_path):
     dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 256, 256, [0.5], [0.5], augment=False)
     # for c in ["benign", "normal", "malignant"]:
         # fine_tune(config, dataset, device, c, wandb_log=True)
-    augmented_dataset = get_dataset(UltrasoundBreastDataset, config['sd_ft_augument_dir'], 256, 256, [0.5], [0.5], augment=False)
+    augmented_dataset = get_dataset(UltrasoundBreastDataset, config['sd_ft_augment_dir'], 256, 256, [0.5], [0.5], augment=False)
 
     combined_dataset = ConcatDataset([dataset, augmented_dataset])
 
