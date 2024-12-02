@@ -1,7 +1,8 @@
-data_dir: '/home/danielchoi/BreastCancerControlNet/data/Ultrasound-Breast-Image'
-sd_ft_agument_dir: '/home/danielchoi/BreastCancerControlNet/data/augmented_finetuned_sd'
-vae_augmented_dir: "/home/danielchoi/BreastCancerControlNet/data/augmented_vae"
-output_dir: '/home/danielchoi/BreastCancerControlNet/model/output'
+data_dir: '/home/dk865/BreastCancerControlNet/data/Ultrasound-Breast-Image'
+sd_ft_agument_dir: '/home/dk865/BreastCancerControlNet/data/augmented_finetuned_sd'
+vae_augmented_dir: "/home/dk865/BreastCancerControlNet/data/augmented_vae"
+control_net_ft_augmented_dir: "/home/dk865/BreastCancerControlNet/data/augmented_finetuned_control_net"
+output_dir: '/home/dk865/BreastCancerControlNet/model/output'
 wandb_key: "9172fb113e07d174f618e9042047cc5c4adacc0f"
 model:
   baseline: baseline_model.pth
