@@ -1,4 +1,5 @@
 data_dir: "/home/danielchoi/BreastCancerControlNet/data/Ultrasound-Breast-Image"
+augmented_dir: "/home/danielchoi/BreastCancerControlNet/data/augmented_vae"
 
 latent_dim: 128
 num_classes: 3
