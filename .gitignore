@@ -7,3 +7,4 @@ venv/
 wandb/
 model/output
 scripts/models
+*.pth
