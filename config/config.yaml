@@ -5,3 +5,4 @@ model:
   baseline: baseline_model.pth
   regular: reg_augmentation_model.pth
   stable_diffusion: stable_diffusion_model.pth
+  control_net: control_net_model.pth
