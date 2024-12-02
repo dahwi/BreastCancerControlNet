@@ -1,9 +1,18 @@
-data_dir: '/home/dk865/BreastCancerControlNet/data/Ultrasound-Breast-Image'
-sd_ft_augument_dir: '/home/dk865/BreastCancerControlNet/data/augmented_from_finetuned_sd'
-output_dir: '/home/dk865/BreastCancerControlNet/model/output'
+data_dir: '/home/danielchoi/BreastCancerControlNet/data/Ultrasound-Breast-Image'
+sd_ft_agument_dir: '/home/danielchoi/BreastCancerControlNet/data/augmented_finetuned_sd'
+vae_augmented_dir: "/home/danielchoi/BreastCancerControlNet/data/augmented_vae"
+output_dir: '/home/danielchoi/BreastCancerControlNet/model/output'
 wandb_key: "9172fb113e07d174f618e9042047cc5c4adacc0f"
 model:
   baseline: baseline_model.pth
   regular: reg_augmentation_model.pth
   stable_diffusion: stable_diffusion_model.pth
   control_net: control_net_model.pth
+  vae: vae_model.pth
+
+vae:
+  latent_dim: 128
+  num_classes: 3
+  input_channels: 3
+  batch_size: 16
+  num_epochs: 100
