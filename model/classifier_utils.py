@@ -12,7 +12,7 @@ import torch.nn as nn
 
 def train(model, output_path, train_loader, val_loader, optimizer, criterion, num_epochs=10, device="cpu", wandb_log=False, desc=""):
     if wandb_log:
-         wandb.init(project="ultrasound-breast-cancer", name=f"{model.name}-{desc}" if desc=="" else model.name)
+         wandb.init(project="ultrasound-breast-cancer", name=f"{model.name}-{desc}" if desc!="" else model.name)
     best_accuracy = 0.0
     best_model_weights = None
 
