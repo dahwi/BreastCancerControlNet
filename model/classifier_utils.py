@@ -10,9 +10,9 @@ from dataset.dataset_helper import split_dataset
 import torch.nn as nn
 
 
-def train(model, output_path, train_loader, val_loader, optimizer, criterion, num_epochs=10, device="cpu", wandb_log=False):
+def train(model, output_path, train_loader, val_loader, optimizer, criterion, num_epochs=10, device="cpu", wandb_log=False, desc=""):
     if wandb_log:
-         wandb.init(project="ultrasound-breast-cancer", name=model.name)
+         wandb.init(project="ultrasound-breast-cancer", name=f"{model.name}-{desc}" if desc=="" else model.name)
     best_accuracy = 0.0
     best_model_weights = None
 
@@ -83,7 +83,7 @@ def evaluate(model, data_loader, device="cpu"):
     return accuracy
 
 
-def run(name, dataset, config, device, epochs=10):
+def run(name, dataset, config, device, epochs=10, wandb_log=True, desc=""):
     # Split into train, validation, and test sets
     train_set, val_set, test_set = split_dataset(dataset)
     print(f"Dataset loaded: {len(dataset)} samples")
@@ -118,6 +118,6 @@ def run(name, dataset, config, device, epochs=10):
     wandb.login(key=config['wandb_key'])
     output_path = os.path.join(config['output_dir'], config['model'][name])
     # Train and evaluate
-    trained_model = train(model, output_path, train_loader, val_loader, optimizer, criterion, epochs, device=device, wandb_log=True)
+    trained_model = train(model, output_path, train_loader, val_loader, optimizer, criterion, epochs, device, wandb_log, desc)
     test_accuracy = evaluate(trained_model, test_loader, device=device)
     print(f"Test accuracy: {test_accuracy:.2f}%")
