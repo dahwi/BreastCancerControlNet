@@ -9,6 +9,8 @@ from torch.optim import AdamW
 from torch.nn.functional import mse_loss
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel
 from torch import autocast
+import torch.nn.functional as F
+import torch.nn.init as init
 
 label_map = {0: "benign", 1: "malignant", 2: "normal"}
 
@@ -17,7 +19,7 @@ def fine_tune(config, dataset, device, epochs=5, wandb_log=False):
         wandb.init(project="ultrasound-breast-cancer", name='control net fine-tuning')
 
     data_loader = DataLoader(dataset, batch_size=2, shuffle=True)
-    output_dir = "/home/dk865/BreastCancerControlNet/data/augmented_from_finetuned_controlnet"
+    output_dir = "/home/diyaparmar/BreastCancerControlNet/data/augmented_from_finetuned_controlnet"
     os.makedirs(output_dir, exist_ok=True)
 
     # Load pre-trained ControlNet model and Stable Diffusion
@@ -28,6 +30,25 @@ def fine_tune(config, dataset, device, epochs=5, wandb_log=False):
         torch_dtype=torch.float16,
         safety_checker=None
     ).to(device)
+
+    model_state_dict = pipe.unet.state_dict()
+    pretrained_sd = torch.load("/home/diyaparmar/BreastCancerControlNet/model/output/stable_diffusion_model.pth")
+
+    # Filter out unnecessary keys and check for missing or renamed layers
+    filtered_weights = {}
+    for name, param in pretrained_sd.items():
+        new_name = name.replace("base_model.model.", "")
+        if new_name in model_state_dict:
+            # If the name matches, ensure the shape is compatible
+            if param.shape == model_state_dict[new_name].shape:
+                filtered_weights[new_name] = param
+               # print("did copy layer")
+
+    # Update the model's state_dict with the filtered weights
+    model_state_dict.update(filtered_weights)
+    # Load the updated state_dict into the model
+    pipe.unet.load_state_dict(model_state_dict)
+
 
     optimizer = AdamW(controlnet.parameters(), lr=1e-4)
     text_prompts = {
@@ -88,17 +109,17 @@ def fine_tune(config, dataset, device, epochs=5, wandb_log=False):
                     generated_image = pipe(prompt, image=random_canny_image).images[0]
 
                 # Convert Canny image tensor back to PIL
-                canny_image_pil = Image.fromarray((random_canny_image.squeeze().cpu().numpy() * 255).astype('uint8')).convert("RGB")
+               # canny_image_pil = Image.fromarray((random_canny_image.squeeze().cpu().numpy() * 255).astype('uint8')).convert("RGB")
 
                 # Combine edge map and generated image side-by-side
-                width, height = generated_image.size
-                combined_image = Image.new("RGB", (width * 2, height))
-                combined_image.paste(canny_image_pil, (0, 0))
-                combined_image.paste(generated_image, (width, 0))
+              #  width, height = generated_image.size
+              #  combined_image = Image.new("RGB", (width * 2, height))
+              #  combined_image.paste(canny_image_pil, (0, 0))
+              #  combined_image.paste(generated_image, (width, 0))
 
                 os.makedirs(f"{output_dir}/{epoch}", exist_ok=True)
                 filename = f"{output_dir}/{epoch}/{key}_{j}_grid.png"
-                combined_image.save(filename)
+                generated_image.save(filename)
 
     # Save fine-tuned model and pipeline
     model_output_dir = os.path.join(config["output_dir"], "fine_tuned_control_net")

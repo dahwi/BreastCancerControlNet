@@ -15,12 +15,12 @@ def main(config_file_path):
     print(f"Using device: {device}")
 
     dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 256, 256, [0.5], [0.5], augment=False)
-   # fine_tune(config, dataset, device)
-    augmented_dataset = get_dataset(UltrasoundBreastDataset, config['sd_ft_agument_dir'], 256, 256, [0.5], [0.5], augment=False)
+    fine_tune(config, dataset, device)
+   # augmented_dataset = get_dataset(UltrasoundBreastDataset, config['sd_ft_agument_dir'], 256, 256, [0.5], [0.5], augment=False)
 
-    combined_dataset = ConcatDataset([dataset, augmented_dataset])
+   # combined_dataset = ConcatDataset([dataset, augmented_dataset])
 
-    run('stable_diffusion', combined_dataset, config, device)
+    #run('stable_diffusion', combined_dataset, config, device)
 
 
    # fine_tune(config, dataset, device, 5, True)

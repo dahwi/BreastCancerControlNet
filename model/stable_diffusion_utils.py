@@ -16,7 +16,7 @@ def fine_tune(config, dataset, device, epochs=5, wandb_log=False):
     if wandb_log:
          wandb.init(project="ultrasound-breast-cancer", name='stable diffusion fine-tuning')
     data_loader = DataLoader(dataset, batch_size=2, shuffle=True)
-    output_dir = "/home/dk865/BreastCancerControlNet/data/augmented_from_finetuned_sd"
+    output_dir = "/home/diyaparmar/BreastCancerControlNet/data/augmented_from_finetuned_sd"
     os.makedirs(output_dir, exist_ok=True)
     # Load SD1.5 model
     pipe = StableDiffusionPipeline.from_pretrained("stable-diffusion-v1-5/stable-diffusion-v1-5")
@@ -78,7 +78,7 @@ def fine_tune(config, dataset, device, epochs=5, wandb_log=False):
         if wandb_log:
             wandb.log({"epoch": epoch + 1, "train_loss": loss.item()})
 
-        num_images = 200  # Number of images to generate per prompt
+        num_images = 0  # Number of images to generate per prompt
 
         for key, prompt in text_prompts.items():
             for j in range(num_images):
