@@ -8,18 +8,18 @@ from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from torch.nn.functional import mse_loss
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel
+from peft import LoraConfig, get_peft_model
 from torch import autocast
 import torch.nn.functional as F
-import torch.nn.init as init
 
 label_map = {0: "benign", 1: "malignant", 2: "normal"}
 
 def fine_tune(config, dataset, device, epochs=5, wandb_log=False):
     if wandb_log:
-        wandb.init(project="ultrasound-breast-cancer", name='control net fine-tuning')
+        wandb.init(project="ultrasound-breast-cancer", name='control net fine-tuning with LoRA')
 
     data_loader = DataLoader(dataset, batch_size=2, shuffle=True)
-    output_dir = "/home/diyaparmar/BreastCancerControlNet/data/augmented_from_finetuned_controlnet"
+    output_dir = "/home/diyaparmar/BreastCancerControlNet/data/augmented_from_finetuned_controlnet_lora"
     os.makedirs(output_dir, exist_ok=True)
 
     # Load pre-trained ControlNet model and Stable Diffusion
@@ -49,8 +49,20 @@ def fine_tune(config, dataset, device, epochs=5, wandb_log=False):
     # Load the updated state_dict into the model
     pipe.unet.load_state_dict(model_state_dict)
 
+    # Set up LoRA
+    lora_config = LoraConfig(
+        r=4,  # Low-rank dimension
+        lora_alpha=16,  # Scaling factor
+        target_modules=["to_q", "to_k", "to_v", "to_out.0"],  # Target U-Net layers
+        lora_dropout=0.1
+    )
+    # Wrap the ControlNet U-Net with LoRA
+    lora_unet = get_peft_model(pipe.unet, lora_config)
+    pipe.unet = lora_unet
+    pipe.to(device)
 
-    optimizer = AdamW(controlnet.parameters(), lr=1e-4)
+    optimizer = AdamW(pipe.unet.parameters(), lr=1e-4)
+
     text_prompts = {
         "benign": "Grayscale mammogram cross-section image with an oval, dark hypoechoic region, smooth well-defined borders, surrounded by lighter, layered fibrous structures, no text in the image",
         "malignant": "Grayscale mammogram cross-section image with an irregular, hypoechoic dark region, spiculated edges, disrupted fibrous layers, and acoustic shadowing beneath the lesion, no text in the image",
@@ -77,7 +89,7 @@ def fine_tune(config, dataset, device, epochs=5, wandb_log=False):
             text_inputs = pipe.tokenizer(prompts, padding=True, truncation=True, return_tensors="pt").to(device)
             encoder_hidden_states = pipe.text_encoder(text_inputs.input_ids)[0]
 
-            # Predict noise using the ControlNet UNet
+            # Predict noise using the LoRA-augmented ControlNet UNet
             model_pred = pipe.unet(
                 noisy_latents,
                 timesteps,
@@ -108,22 +120,15 @@ def fine_tune(config, dataset, device, epochs=5, wandb_log=False):
                 with autocast(device_type="cuda", dtype=torch.float16):
                     generated_image = pipe(prompt, image=random_canny_image).images[0]
 
-                # Convert Canny image tensor back to PIL
-               # canny_image_pil = Image.fromarray((random_canny_image.squeeze().cpu().numpy() * 255).astype('uint8')).convert("RGB")
-
-                # Combine edge map and generated image side-by-side
-              #  width, height = generated_image.size
-              #  combined_image = Image.new("RGB", (width * 2, height))
-              #  combined_image.paste(canny_image_pil, (0, 0))
-              #  combined_image.paste(generated_image, (width, 0))
-
                 os.makedirs(f"{output_dir}/{epoch}", exist_ok=True)
                 filename = f"{output_dir}/{epoch}/{key}_{j}_grid.png"
                 generated_image.save(filename)
+                
+                save_image(random_canny_image.float(), f"{output_dir}/{epoch}/{key}_{j}_canny.png")
 
-    # Save fine-tuned model and pipeline
-    model_output_dir = os.path.join(config["output_dir"], "fine_tuned_control_net")
+    # Save fine-tuned LoRA model and pipeline
+    model_output_dir = os.path.join(config["output_dir"], "fine_tuned_control_net_lora")
     controlnet.save_pretrained(model_output_dir)
-    pipe.save_pretrained(f"{config['output_dir']}/fine_tuned_control_net_pipeline")
+    pipe.save_pretrained(f"{config['output_dir']}/fine_tuned_control_net_lora_pipeline")
 
     print(f"Fine-tuned model saved to {model_output_dir}.")
