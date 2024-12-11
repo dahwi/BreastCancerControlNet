@@ -1,6 +1,6 @@
 import torch
 import yaml
-from dataset.dataset_helper import get_dataset
+from dataset.dataset_helper import get_dataset, filter_dataset_by_label
 from dataset.ultrasound_breast_dataset import UltrasoundBreastDataset
 from model.stable_diffusion_utils import fine_tune
 from torch.utils.data import ConcatDataset
@@ -14,14 +14,22 @@ def main(config_file_path):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 256, 256, [0.5], [0.5], augment=False)
-    # for c in ["benign", "normal", "malignant"]:
-        # fine_tune(config, dataset, device, c, wandb_log=True)
-    augmented_dataset = get_dataset(UltrasoundBreastDataset, config['sd_ft_augment_dir'], 256, 256, [0.5], [0.5], augment=False)
+    label_map = {"benign": 0, "normal": 1, "malignant": 2}
+    for epochs in [5,10]:
+        # uncomment if you want to fine-tune and generate images
+        for c in ["benign", "normal", "malignant"]:
+            dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 256, 256, [0.5], [0.5], augment=False)
+            dataset = filter_dataset_by_label(dataset, label_map[c])
+            print(f"Finetuning for {c}")
+            fine_tune(config, dataset, device, c, epochs=epochs, wandb_log=True)
+            print(f"Finetuning complete and generated images for {c}")
 
-    combined_dataset = ConcatDataset([dataset, augmented_dataset])
+        dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 256, 256, [0.5], [0.5], augment=False)
+        augmented_dataset = get_dataset(UltrasoundBreastDataset, config[f'sd_ft_augment_dir_{epochs}'], 256, 256, [0.5], [0.5], augment=False)
 
-    run('stable_diffusion', combined_dataset, config, device)
+        combined_dataset = ConcatDataset([dataset, augmented_dataset])
+
+        run('stable_diffusion', combined_dataset, config, device)
 
 
 if __name__ == '__main__':
