@@ -13,8 +13,9 @@ def main(config_file_path):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 512, 512, [0.5], [0.5], False, True)
-    fine_tune(config, dataset, device, 5, True)
+    dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 512, 512, [0.5], [0.5], augment=False, return_original_and_canny=True)
+    for c in ["benign", "normal", "malignant"]:
+        fine_tune(config, dataset, c, device, 5, True)
 
 
 if __name__ == '__main__':
