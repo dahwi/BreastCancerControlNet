@@ -14,22 +14,21 @@ def main(config_file_path):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    label_map = {"benign": 0, "normal": 1, "malignant": 2}
-    for epochs in [5,10]:
-        # uncomment if you want to fine-tune and generate images
-        for c in ["benign", "normal", "malignant"]:
-            dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 256, 256, [0.5], [0.5], augment=False)
-            dataset = filter_dataset_by_label(dataset, label_map[c])
-            print(f"Finetuning for {c}")
-            fine_tune(config, dataset, device, c, epochs=epochs, wandb_log=True)
-            print(f"Finetuning complete and generated images for {c}")
+    # uncomment below if you want to fine-tune and generate images
+    # label_map = {"benign": 0, "normal": 1, "malignant": 2}
+    # for c in ["benign", "normal", "malignant"]:
+    #     dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 256, 256, [0.5], [0.5], augment=False)
+    #     dataset = filter_dataset_by_label(dataset, label_map[c])
+    #     print(f"Finetuning for {c}")
+    #     fine_tune(config, dataset, device, c, epochs=5, wandb_log=True)
+    #     print(f"Finetuning complete and generated images for {c}")
 
-        dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 256, 256, [0.5], [0.5], augment=False)
-        augmented_dataset = get_dataset(UltrasoundBreastDataset, config[f'sd_ft_augment_dir_{epochs}'], 256, 256, [0.5], [0.5], augment=False)
+    dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 256, 256, [0.5], [0.5], augment=False)
+    augmented_dataset = get_dataset(UltrasoundBreastDataset, config[f'sd_ft_augmented_dir'], 256, 256, [0.5], [0.5], augment=False)
 
-        combined_dataset = ConcatDataset([dataset, augmented_dataset])
+    combined_dataset = ConcatDataset([dataset, augmented_dataset])
 
-        run('stable_diffusion', combined_dataset, config, device)
+    run('stable_diffusion', combined_dataset, config, device)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 import torch
 import os
 import wandb
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.optim.lr_scheduler import CosineAnnealingLR, StepLR
 from tqdm import tqdm
 from diffusers import StableDiffusionPipeline
 from peft import LoraConfig, get_peft_model
@@ -39,7 +39,8 @@ def fine_tune(config, dataset, device, key, epochs=5, wandb_log=False):
     pipe.to(device)
 
     optimizer = Adam(pipe.unet.parameters(), lr=1e-4)
-    scheduler = CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
+    scheduler = StepLR(optimizer, step_size=2, gamma=0.5)  # Decay LR by 0.5 every 2 epochs
+    # scheduler = CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 
     for epoch in tqdm(range(epochs)):  
         for batch, labels in tqdm(data_loader):
