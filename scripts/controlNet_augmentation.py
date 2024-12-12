@@ -14,7 +14,7 @@ def main(config_file_path):
     print(f"Using device: {device}")
 
     dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 512, 512, [0.5], [0.5], False, True)
-    fine_tune(config, dataset, device, 5, True)
+    fine_tune(config, dataset, device, "benign", 5, True)
 
 
 if __name__ == '__main__':

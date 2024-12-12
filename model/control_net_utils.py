@@ -10,15 +10,15 @@ from torch.optim import AdamW
 from torch.nn.functional import mse_loss
 from diffusers import StableDiffusionControlNetPipeline, ControlNetModel
 from torch import autocast
-import torch.nn.functional as F
-import torch.nn.init as init
 import numpy as np
+import torch
+from safetensors.torch import load_file
 
 label_map = {0: "benign", 1: "malignant", 2: "normal"}
 
-def fine_tune(config, dataset, device, epochs=5, wandb_log=False):
+def fine_tune(config, dataset, device, key, epochs=5, wandb_log=False):
     if wandb_log:
-        wandb.init(project="ultrasound-breast-cancer", name='control net fine-tuning')
+        wandb.init(project="ultrasound-breast-cancer", name='control net fine-tuning {key}')
 
     data_loader = DataLoader(dataset, batch_size=2, shuffle=True)
     output_dir = "/home/diyaparmar/BreastCancerControlNet/data/augmented_from_finetuned_controlnet"
@@ -33,24 +33,6 @@ def fine_tune(config, dataset, device, epochs=5, wandb_log=False):
         safety_checker=None
     ).to(device)
 
-    model_state_dict = pipe.unet.state_dict()
-    pretrained_sd = torch.load("/home/diyaparmar/BreastCancerControlNet/model/output/stable_diffusion_model.pth")
-
-    # Filter out unnecessary keys and check for missing or renamed layers
-    filtered_weights = {}
-    for name, param in pretrained_sd.items():
-        new_name = name.replace("base_model.model.", "")
-        if new_name in model_state_dict:
-            # If the name matches, ensure the shape is compatible
-            if param.shape == model_state_dict[new_name].shape:
-                filtered_weights[new_name] = param
-               # print("did copy layer")
-
-    # Update the model's state_dict with the filtered weights
-    model_state_dict.update(filtered_weights)
-    # Load the updated state_dict into the model
-    pipe.unet.load_state_dict(model_state_dict)
-
 
     optimizer = AdamW(controlnet.parameters(), lr=1e-4)
     text_prompts = {
@@ -60,7 +42,6 @@ def fine_tune(config, dataset, device, epochs=5, wandb_log=False):
     }
 
     for epoch in tqdm(range(epochs)):
-  
         for original_images, canny_images, labels in tqdm(data_loader):
             original_images = original_images.to(device, dtype=torch.float16)
             canny_images = canny_images.to(device, dtype=torch.float16)
@@ -102,41 +83,36 @@ def fine_tune(config, dataset, device, epochs=5, wandb_log=False):
             wandb.log({"epoch": epoch + 1, "train_loss": loss.item()})
 
         # Generate images for evaluation
-        for key, prompt in text_prompts.items():
-            for j in range(5):  # Generate 5 images per prompt
-                # Load a random original image from the dataset
-                random_idx = torch.randint(len(dataset), (1,)).item()
-                original_image, _, _ = dataset[random_idx]
+        prompt = text_prompts[key]
+        for j in range(5):  # Generate 5 images per prompt
+            # Load a random original image from the dataset
+            random_idx = torch.randint(len(dataset), (1,)).item()
+            original_image, _, _ = dataset[random_idx]
 
-                image = np.array(original_image)
+            # Convert tensor to numpy array and scale values
+            org_image_np = (original_image.permute(1, 2, 0).numpy() * 255).astype(np.uint8)
+                
+            # Apply Canny edge detection
+            canny_image = cv2.Canny(org_image_np, 50, 150)
+                
+            # Convert Canny image to RGB (expected input for pipeline)
+            canny_image_rgb = cv2.cvtColor(canny_image, cv2.COLOR_GRAY2RGB)
 
-                # Ensure image is grayscale or convert it to grayscale for Canny
-                if image.ndim == 3 and image.shape[2] == 3:  # If RGB, convert to grayscale
-                    image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            # Convert numpy array to PIL Image for pipeline
+            canny_image_pil = Image.fromarray(canny_image_rgb)
 
-                image = image.astype(np.uint8)
+            # Use mixed precision for inference
+            with autocast(device_type="cuda", dtype=torch.float16):
+                generated_image = pipe(prompt, image=canny_image_pil).images[0]
 
-                # Apply Canny edge detection
-                canny_image = cv2.Canny(image, 100, 200)
+            os.makedirs(f"{output_dir}/{epoch}", exist_ok=True)
+            filename = f"{output_dir}/{epoch}/{key}_{j}_grid.png"
+            generated_image.save(filename)
 
-                # Convert the Canny output to 3 channels (required for the pipeline)
-                canny_image = np.expand_dims(canny_image, axis=-1)  # Add a channel dimension
-                canny_image = np.concatenate([canny_image] * 3, axis=-1)  # Convert to 3-channel image
-
-                canny_image_pil = Image.fromarray(canny_image)
-                canny_image_pil = canny_image_pil.resize((512, 512))
-         
-                # Use mixed precision for inference
-                with autocast(device_type="cuda", dtype=torch.float16):
-                    generated_image = pipe(prompt, image=canny_image_pil).images[0]
-
-                os.makedirs(f"{output_dir}/{epoch}", exist_ok=True)
-                filename = f"{output_dir}/{epoch}/{key}_{j}_grid.png"
-                generated_image.save(filename)
-
+        print(f'Complete creating augmented images for {key}')
 
     # Save fine-tuned model and pipeline
-    model_output_dir = os.path.join(config["output_dir"], "fine_tuned_control_net")
+    model_output_dir = os.path.join(config["output_dir"], "fine_tuned_control_net {key}")
     controlnet.save_pretrained(model_output_dir)
     pipe.save_pretrained(f"{config['output_dir']}/fine_tuned_control_net_pipeline")
 

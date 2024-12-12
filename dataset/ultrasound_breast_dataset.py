@@ -35,7 +35,7 @@ class UltrasoundBreastDataset(Dataset):
                 elif label_dir == "malignant":
                     label = 2
                 for img_name in os.listdir(label_dir_path):
-                    if "mask" not in img_name:  # Skip mask images
+                    if "mask" not in img_name and label == 0:  # Skip mask images
                         img_path = os.path.join(label_dir, img_name)
                         data.append((img_path, label))
         return data
