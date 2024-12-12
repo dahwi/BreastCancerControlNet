@@ -7,7 +7,7 @@ from torch.utils.data.dataset import Dataset
 
 
 class UltrasoundBreastDataset(Dataset):
-    def __init__(self, root_dir, transform=None, as_vector=False, return_original_and_canny=False):
+    def __init__(self, root_dir, transform=None, as_vector=False):
         """
         Args:
             root_dir (str): Root directory containing subfolders for benign, normal, and malignant images.
@@ -18,7 +18,6 @@ class UltrasoundBreastDataset(Dataset):
         self.root_dir = root_dir
         self.transform = transform
         self.as_vector = as_vector  # Whether to flatten images into vectors
-        self.return_original_and_canny = return_original_and_canny
         self.data = self._load_data()
 
     def _load_data(self):
@@ -55,20 +54,13 @@ class UltrasoundBreastDataset(Dataset):
 
         # Generate Canny edge map
         grayscale_image = cv2.imread(full_img_path, cv2.IMREAD_GRAYSCALE)
-        canny_image = cv2.Canny(grayscale_image, 50, 150)
-        canny_image = Image.fromarray(canny_image).convert("RGB")
 
         # Apply transformations
         if self.transform:
             original_image = self.transform(original_image)
-            canny_image = self.transform(canny_image)
 
         # Convert to vector if required
         if self.as_vector:
             original_image = original_image.view(-1)
-            canny_image = canny_image.view(-1)
 
-        if self.return_original_and_canny:
-            return original_image, canny_image, label
-        else:
-            return original_image, label
+        return original_image, label
