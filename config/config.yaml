@@ -1,0 +1,19 @@
+data_dir: '/PATH/TO/DATA/DIR/data/Ultrasound-Breast-Image'
+sd_ft_augmented_dir: '/PATH/TO/DATA/DIR/data/augmented_finetuned_sd'
+vae_augmented_dir: "/PATH/TO/DATA/DIR/data/augmented_vae"
+controlnet_ft_augmented_dir: "/PATH/TO/DATA/DIR/data/augmented_finetuned_controlnet"
+output_dir: '/PATH/TO/DATA/DIR/model/output'
+wandb_key: "YOUR_WANDB_KEY"
+model:
+  baseline: baseline_model.pth
+  regular: reg_augmentation_model.pth
+  stable_diffusion: stable_diffusion_model.pth
+  control_net: control_net_model.pth
+  vae: vae_model.pth
+
+vae:
+  latent_dim: 128
+  num_classes: 3
+  input_channels: 3
+  batch_size: 16
+  num_epochs: 100
