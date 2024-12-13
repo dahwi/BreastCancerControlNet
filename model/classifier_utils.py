@@ -115,7 +115,8 @@ def run(name, dataset, config, device, epochs=10, wandb_log=True, desc=""):
     optimizer = torch.optim.Adam(model.classifier[6].parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss()
 
-    wandb.login(key=config['wandb_key'])
+    if wandb_log:
+        wandb.login(key=config['wandb_key'])
     output_path = os.path.join(config['output_dir'], config['model'][name])
     # Train and evaluate
     trained_model = train(model, output_path, train_loader, val_loader, optimizer, criterion, epochs, device, wandb_log, desc)

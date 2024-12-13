@@ -16,10 +16,11 @@ Breast cancer classification relies heavily on high-quality and diverse datasets
 - **Evaluation Metrics**: Assess the realism and diagnostic utility of generated images using domain-specific metrics.
 
 
-<!-- ## **Dataset**
-The project uses a dataset of breast images with labels ("cancerous" or "non-cancerous"). The initial dataset consists of approximately 1,000 images, with the potential to expand to 16,000 images.
+## **Dataset**
+The project uses a dataset of breast ultrasound images with labels: normal, malignant, and benign. The initial dataset consists of 780 images. [Link to dataset](https://www.kaggle.com/datasets/aryashah2k/breast-ultrasound-images-dataset/).
 
-### **Data Inputs**
+
+<!-- ### **Data Inputs**
 - Grayscale mammograms or ultrasound images.
 - Corresponding edge maps or segmentation masks.
 
@@ -30,7 +31,8 @@ The project uses a dataset of breast images with labels ("cancerous" or "non-can
 <!-- ## **Model Architecture**
 - **ControlNet**: A diffusion-based model fine-tuned for generating breast cancer images.
 - **Conditional Latent Vectors**: Used to guide image generation based on cancer/no-cancer labels.
-- **Evaluation Framework**: Combines perceptual and classification-based metrics to validate synthetic data. -->
+- **Evaluation Framework**: Combines perceptual and classification-based metrics to validate synthetic data.
+<!-->
 
 ## **Installation**
 Clone this repository and install the required dependencies:
@@ -40,3 +42,23 @@ git clone
 cd BreastCancerControlNet
 pip install -r requirements.txt
 export PYTHONPATH=/PATH_TO_PROJECT/BreastCancerControlNet:$PYTHONPATH
+export BASE_DIR=$(pwd)
+export WANDB_KEY="your-wandb-api-key-here"
+```
+
+## **Model Fine-tuning**
+
+How to create vae model, stable diffusion lora weights
+
+Once you have lora weights, then fine-tune controlnet
+
+## **Image Generation**
+
+How to generate images for vae, stable diffusion, and controlnet
+
+## **Running Classifier**
+
+How to run classifiers on baseline vae, stable diffusion, controlnet
+
+## **Example Images**
+
