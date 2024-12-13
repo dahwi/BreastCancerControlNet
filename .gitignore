@@ -1,5 +1,6 @@
 # Ignore all files in the data directory
 data/
+config/
 venv/
 .ipynb_checkpoints/
 *.ipynb
