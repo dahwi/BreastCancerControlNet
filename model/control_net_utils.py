@@ -17,6 +17,21 @@ from dataset.dataset_helper import transformToGreyScale
 
 label_map = {0: "benign", 1: "normal", 2: "malignant"}  # Map integer labels to strings
 
+def create_edgemap(image):
+    # Convert tensor to numpy array and scale values
+    org_image_np = (image.permute(1, 2, 0).cpu().numpy() * 255).astype(np.uint8)
+    
+    # Apply Canny edge detection
+    canny_image = cv2.Canny(org_image_np, 50, 150)
+    
+    # Convert Canny image to RGB (expected input for pipeline)
+    canny_image_rgb = cv2.cvtColor(canny_image, cv2.COLOR_GRAY2RGB)
+
+    # Convert numpy array to PIL Image for pipeline
+    canny_image_pil = Image.fromarray(canny_image_rgb)
+
+    return canny_image_pil
+
 def fine_tune(config, dataset, mask_dataset, key, device, epochs=5, wandb_log=False):
     if wandb_log:
         wandb.init(project="ultrasound-breast-cancer", name=f'controlnet fine-tuning {key}')
@@ -48,7 +63,7 @@ def fine_tune(config, dataset, mask_dataset, key, device, epochs=5, wandb_log=Fa
 
     text_prompts = {
         "benign": "Grayscale mammogram cross-section image with an oval, dark hypoechoic region, smooth well-defined borders, surrounded by lighter, layered fibrous structures, no text in the image",
-        "malignant": "Grayscale mammogram cross-section image with an irregular, hypoechoic dark region, spiculated edges, disrupted fibrous layers, and acoustic shadowing beneath the lesion, no text in the image",
+        "malignant": "Grayscale mammogram cross-section image of malignant tumor. Edge map defines the tumor form and should be black. The surrounding should be smooth color trainsition to light greys, no text in the image",
         "normal": "Grayscale mammogram cross-section image with smooth, uniform fibrous layers, consistent textures, and gradual transitions between light and dark regions across the tissue, no text in the image"
     }
 
@@ -112,48 +127,21 @@ def fine_tune(config, dataset, mask_dataset, key, device, epochs=5, wandb_log=Fa
         
         scheduler.step()  # Update the learning rate`
 
-        # Generate images for evaluation
-        prompt = text_prompts[key]
-        for j in range(2):  # Generate 5 images per prompt
-            random_idx = torch.randint(len(dataset), (1,)).item()
-            org_image, _ = dataset[random_idx]
-            mask_image, _ = mask_dataset[random_idx]
-            # Convert tensor to numpy array and scale values
-            org_image_np = (mask_image.permute(1, 2, 0).cpu().numpy() * 255).astype(np.uint8)
-            
-            # Apply Canny edge detection
-            canny_image = cv2.Canny(org_image_np, 50, 150)
-            
-            # Convert Canny image to RGB (expected input for pipeline)
-            canny_image_rgb = cv2.cvtColor(canny_image, cv2.COLOR_GRAY2RGB)
+    # Generate images for evaluation
+    prompt = text_prompts[key]
+    os.makedirs(f"{output_dir}/{key}", exist_ok=True)
+    for j in range(200):  # Generate 5 images per prompt
+        org_image, _ = dataset[j]
+        mask_image, _ = mask_dataset[j]
+        
+        combined_image = 0.8*org_image+1.5*mask_image
+        edgemap = create_edgemap(combined_image)
 
-            # Convert numpy array to PIL Image for pipeline
-            canny_image_pil = Image.fromarray(canny_image_rgb)
+        # Generate image using the pipeline
+        with autocast(device_type="cuda", dtype=torch.float16):
+            generated_image = pipe(prompt=prompt, image=edgemap).images[0]
 
-            # Generate image using the pipeline
-            with autocast(device_type="cuda", dtype=torch.float16):
-                generated_image = pipe(prompt=prompt, image=canny_image_pil).images[0]
-
-            image_greyscale = transformToGreyScale(org_image, mean=[0.5], std=[0.5])
-            org_image_pil = ToPILImage()(image_greyscale)
-
-            mask_image_greyscale = transformToGreyScale(mask_image, mean=[0.5], std=[0.5])
-            org_mask_image_pil = ToPILImage()(mask_image_greyscale)
-
-            # Combine images side by side
-            widths, heights = zip(*(img.size for img in [org_image_pil, org_mask_image_pil, canny_image_pil, generated_image]))
-            total_width = sum(widths)
-            max_height = max(heights)
-
-            combined_image = Image.new("RGB", (total_width, max_height))
-            x_offset = 0
-            for img in [org_image_pil, org_mask_image_pil, canny_image_pil, generated_image]:
-                combined_image.paste(img, (x_offset, 0))
-                x_offset += img.size[0]
-
-            # Save the combined image
-            combined_image.save(f"{output_dir}/epoch_{epoch}_combined_{key}_{j}.png")
-
+        generated_image.save(f"{output_dir}/{key}/{key}_{j}.png")
 
     # Save fine-tuned model and pipeline
     model_output_dir = os.path.join(config["output_dir"], f"fine_tuned_controlnet_{key}")
