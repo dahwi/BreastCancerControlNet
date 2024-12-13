@@ -34,7 +34,8 @@ class UltrasoundBreastDataset(Dataset):
                     label = 1
                 elif label_dir == "malignant":
                     label = 2
-                for img_name in os.listdir(label_dir_path):
+                files_in_dir = sorted(os.listdir(label_dir_path), key=lambda x: int(''.join(filter(str.isdigit, x))))
+                for img_name in files_in_dir:
                     if not self.mask:
                         if "mask" not in img_name:  # Skip mask images
                             img_path = os.path.join(label_dir, img_name)
@@ -57,9 +58,6 @@ class UltrasoundBreastDataset(Dataset):
 
         # Load the original image
         original_image = Image.open(full_img_path).convert("RGB")
-
-        # Generate Canny edge map
-        grayscale_image = cv2.imread(full_img_path, cv2.IMREAD_GRAYSCALE)
 
         # Apply transformations
         if self.transform:
