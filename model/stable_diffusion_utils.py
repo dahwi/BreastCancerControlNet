@@ -21,7 +21,7 @@ def fine_tune(config, dataset, device, key, epochs=5, wandb_log=False):
     if wandb_log:
          wandb.init(project="ultrasound-breast-cancer", name=f'stable diffusion fine-tuning {key}')
     data_loader = DataLoader(dataset, batch_size=2, shuffle=True)
-    output_dir = config[f'sd_ft_augment_dir_{epochs}']
+    output_dir = config[f'sd_ft_augmented_dir']
     os.makedirs(output_dir, exist_ok=True)
     # Load SD1.5 model
     pipe = StableDiffusionPipeline.from_pretrained("stable-diffusion-v1-5/stable-diffusion-v1-5", safety_checker=None)
@@ -41,7 +41,8 @@ def fine_tune(config, dataset, device, key, epochs=5, wandb_log=False):
     optimizer = Adam(pipe.unet.parameters(), lr=1e-4)
     scheduler = StepLR(optimizer, step_size=2, gamma=0.5)  # Decay LR by 0.5 every 2 epochs
     # scheduler = CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
-
+    trainable_params = sum(p.numel() for p in pipe.unet.parameters() if p.requires_grad)
+    print(f"Trainable parameters with LoRA: {trainable_params}")
     for epoch in tqdm(range(epochs)):  
         pipe.unet.train()
         for batch, labels in tqdm(data_loader):
