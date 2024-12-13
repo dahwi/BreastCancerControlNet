@@ -24,8 +24,6 @@ def main(config_file_path):
     # save_augmented_dataset(augmented_dataset, config['data_dir'])
     combined_dataset = ConcatDataset([dataset, augmented_dataset])
 
-    
-
     run('baseline', combined_dataset, config, device)
     
     
