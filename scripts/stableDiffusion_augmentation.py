@@ -7,11 +7,13 @@ from dataset.ultrasound_breast_dataset import UltrasoundBreastDataset
 from model.stable_diffusion_utils import fine_tune
 from torch.utils.data import ConcatDataset
 from model.classifier_utils import run
+from config.resolve_config import resolve_config
 
-def main(config_file_path='config/config.yaml', finetune=False):
+def main(config_file_path='config/config.yaml', finetune=False, wandb_log=False):
     # Load configuration
     with open(config_file_path, "r") as f:
         config = yaml.safe_load(f)
+    config = resolve_config(config)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
@@ -30,14 +32,14 @@ def main(config_file_path='config/config.yaml', finetune=False):
 
     combined_dataset = ConcatDataset([dataset, augmented_dataset])
 
-    run('stable_diffusion', combined_dataset, config, device)
+    run('stable_diffusion', combined_dataset, config, device, wandb_log=wandb_log)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="StableDiffusion Generation Script")
-    parser.add_argument('config_file_path', type=str, help='Path to the configuration file')
     parser.add_argument('--finetune', action='store_true', help='Flag to enable fine-tuning')
+    parser.add_argument('--wandb', action='store_true', help='Flag to enable logging to wandb')
 
     args = parser.parse_args()
     print('args: ', args)
-    main(args.config_file_path, args.finetune)
+    main(finetune=args.finetune, wandb_log=args.wandb)
