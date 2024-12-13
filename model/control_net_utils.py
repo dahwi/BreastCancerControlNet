@@ -68,6 +68,7 @@ def fine_tune(config, dataset, mask_dataset, key, device, epochs=5, wandb_log=Fa
     }
 
     for epoch in tqdm(range(epochs)):
+        pipe.controlnet.train()
         for original_images, labels in tqdm(data_loader):
             original_images = original_images.to(device, dtype=torch.float16)
             labels = labels.to(device)
@@ -128,6 +129,7 @@ def fine_tune(config, dataset, mask_dataset, key, device, epochs=5, wandb_log=Fa
         scheduler.step()  # Update the learning rate`
 
     # Generate images for evaluation
+    pipe.controlnet.eval()
     prompt = text_prompts[key]
     os.makedirs(f"{output_dir}/{key}", exist_ok=True)
     for j in range(200):  # Generate 5 images per prompt

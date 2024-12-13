@@ -43,6 +43,7 @@ def fine_tune(config, dataset, device, key, epochs=5, wandb_log=False):
     # scheduler = CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 
     for epoch in tqdm(range(epochs)):  
+        pipe.unet.train()
         for batch, labels in tqdm(data_loader):
             batch, labels = batch.to(device), labels.to(device)
 
@@ -78,10 +79,12 @@ def fine_tune(config, dataset, device, key, epochs=5, wandb_log=False):
         if wandb_log:
             wandb.log({"epoch": epoch + 1, "train_loss": loss.item()})
         scheduler.step()  # Update the learning rate`
+    
     num_images = 10  # Number of images to generate per prompt
 
     prompt = text_prompts[key]
     os.makedirs(f"{output_dir}/{key}", exist_ok=True)
+    pipe.unet.eval()
     for j in range(num_images):
         with autocast(device_type='cuda', dtype=torch.float16):
             image = pipe(prompt).images[0]  # Generate an image
