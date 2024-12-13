@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 import torch
 
 from tqdm import tqdm
-from torch.utils.data import random_split
+from torch.utils.data import random_split, Subset
 from torchvision import transforms
 from torchvision.transforms import ToPILImage
 
-def get_dataset(dataset_class, path, width, height, mean, std, augment=False):
+def get_dataset(dataset_class, path, width, height, mean, std, augment=False, as_vector=False, mask=False):
     """
     Load the dataset and apply augmentations if required.
     """
@@ -34,10 +34,25 @@ def get_dataset(dataset_class, path, width, height, mean, std, augment=False):
     dataset = dataset_class(
         root_dir=path,
         transform=transform,
-        as_vector=False  # Load as image data
+        as_vector=as_vector, # Load as image data,
+        mask=mask
     )
 
     return dataset
+
+def filter_dataset_by_label(dataset, target_label):
+    """
+    Filters a dataset to include only samples with the target label.
+
+    Args:
+        dataset (Dataset): The dataset to filter.
+        target_label (int): The label to keep.
+
+    Returns:
+        Subset: A PyTorch Subset containing only samples with the target label.
+    """
+    indices = [i for i, (_, label) in enumerate(dataset) if label == target_label]
+    return Subset(dataset, indices)
 
 def show_sample_images(dataset, size=10):
     """

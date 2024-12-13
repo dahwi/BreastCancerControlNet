@@ -1,7 +1,7 @@
 import torch
 import os
 import wandb
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import CosineAnnealingLR, StepLR
 from tqdm import tqdm
 from diffusers import StableDiffusionPipeline
 from peft import LoraConfig, get_peft_model
@@ -19,13 +19,12 @@ text_prompts = {
 
 def fine_tune(config, dataset, device, key, epochs=5, wandb_log=False):
     if wandb_log:
-         wandb.init(project="ultrasound-breast-cancer", name='stable diffusion fine-tuning')
+         wandb.init(project="ultrasound-breast-cancer", name=f'stable diffusion fine-tuning {key}')
     data_loader = DataLoader(dataset, batch_size=2, shuffle=True)
-    output_dir = config['sd_ft_augument_dir']
+    output_dir = config[f'sd_ft_augment_dir_{epochs}']
     os.makedirs(output_dir, exist_ok=True)
     # Load SD1.5 model
     pipe = StableDiffusionPipeline.from_pretrained("stable-diffusion-v1-5/stable-diffusion-v1-5", safety_checker=None)
-    pipe.scheduler.set_timesteps(pipe.scheduler.num_train_timesteps)
 
     lora_config = LoraConfig(
         r=4,  # Low-rank dimension
@@ -41,6 +40,7 @@ def fine_tune(config, dataset, device, key, epochs=5, wandb_log=False):
 
     optimizer = Adam(pipe.unet.parameters(), lr=1e-4)
     scheduler = StepLR(optimizer, step_size=2, gamma=0.5)  # Decay LR by 0.5 every 2 epochs
+    # scheduler = CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 
     for epoch in tqdm(range(epochs)):  
         for batch, labels in tqdm(data_loader):
@@ -59,7 +59,7 @@ def fine_tune(config, dataset, device, key, epochs=5, wandb_log=False):
 
             # Generate text embeddings
             prompts = [f"{label_map[label.item()]} mammogram grayscale cross-section breast image" for label in labels]            
-            text_inputs = pipe.tokenizer(prompts, padding="max_length", truncation=True, return_tensors="pt").to(device)
+            text_inputs = pipe.tokenizer(prompts, padding="max_length", max_length=77, truncation=True, return_tensors="pt").to(device)
             encoder_hidden_states = pipe.text_encoder(text_inputs.input_ids)[0].to(device)
 
             # Forward pass through the U-Net
@@ -78,24 +78,21 @@ def fine_tune(config, dataset, device, key, epochs=5, wandb_log=False):
         if wandb_log:
             wandb.log({"epoch": epoch + 1, "train_loss": loss.item()})
         scheduler.step()  # Update the learning rate`
-    num_images = 200  # Number of images to generate per prompt
+    num_images = 10  # Number of images to generate per prompt
 
     prompt = text_prompts[key]
     os.makedirs(f"{output_dir}/{key}", exist_ok=True)
     for j in range(num_images):
         with autocast(device_type='cuda', dtype=torch.float16):
             image = pipe(prompt).images[0]  # Generate an image
-        # os.makedirs(f"{output_dir}/{epoch}", exist_ok=True)
         filename = f"{output_dir}/{key}/{key}_{j}.png"
         image.save(filename)  # Save the image
-        # print(f"Saved: {filename}")
     print(f'Complete creating augmented images for {key}')
 
     # Save fine-tuned LoRA weights
-    model_output_dir = os.path.join(config['output_dir'], config['model']['stable_diffusion'])
-    torch.save(pipe.unet.state_dict(), model_output_dir)
-    
-    # Save full pipeline
-    pipe.save_pretrained(f"{config['output_dir']}/fine_tuned_pipeline")
+    fine_tuned_output_path = f"{config['output_dir']}/fine_tuned_lora_weights_{key}"
+    lora_unet.save_pretrained(fine_tuned_output_path)
 
-    print(f"Fine-tuned model and pipeline saved to {model_output_dir}.")    
+    print(f"Fine-tuned model weights saved to {fine_tuned_output_path}.")    
+
+    wandb.finish()
