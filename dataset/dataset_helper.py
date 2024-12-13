@@ -7,7 +7,7 @@ from torch.utils.data import random_split, Subset
 from torchvision import transforms
 from torchvision.transforms import ToPILImage
 
-def get_dataset(dataset_class, path, width, height, mean, std, augment=False, as_vector=False):
+def get_dataset(dataset_class, path, width, height, mean, std, augment=False, as_vector=False, mask=False):
     """
     Load the dataset and apply augmentations if required.
     """
@@ -34,7 +34,8 @@ def get_dataset(dataset_class, path, width, height, mean, std, augment=False, as
     dataset = dataset_class(
         root_dir=path,
         transform=transform,
-        as_vector=as_vector # Load as image data,
+        as_vector=as_vector, # Load as image data,
+        mask=mask
     )
 
     return dataset

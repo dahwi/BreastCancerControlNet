@@ -16,7 +16,7 @@ def main(config_file_path):
     label_map = {"benign": 0, "normal": 1, "malignant": 2}
     for c in ["malignant"]: #, "normal", "benign"]:
         dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 512, 512, [0.5], [0.5], augment=False)
-        mask_dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 512, 512, [0.5], [0.5], augment=True)
+        mask_dataset = get_dataset(UltrasoundBreastDataset, config['data_dir'], 512, 512, [0.5], [0.5], augment=True, mask=True)
         print(f'read full dataset: size of {len(dataset)}')
         dataset = filter_dataset_by_label(dataset, label_map[c])
         print(f'dataset class: {c}, size: {len(dataset)}')
