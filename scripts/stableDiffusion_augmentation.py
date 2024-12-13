@@ -39,4 +39,5 @@ if __name__ == '__main__':
     parser.add_argument('--finetune', action='store_true', help='Flag to enable fine-tuning')
 
     args = parser.parse_args()
+    print('args: ', args)
     main(args.config_file_path, args.finetune)
