@@ -1,6 +1,6 @@
 # Ignore all files in the data directory
 data/
-config/
+config/config_*.yaml
 venv/
 .ipynb_checkpoints/
 *.ipynb
