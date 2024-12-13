@@ -1,9 +1,9 @@
-data_dir: '/home/dk865/BreastCancerControlNet/data/Ultrasound-Breast-Image'
-sd_ft_augmented_dir: '/home/dk865/BreastCancerControlNet/data/augmented_finetuned_sd'
-vae_augmented_dir: "/home/dk865/BreastCancerControlNet/data/augmented_vae"
-controlnet_ft_augmented_dir: "/home/dk865/BreastCancerControlNet/data/augmented_finetuned_controlnet"
-output_dir: '/home/dk865/BreastCancerControlNet/model/output'
-wandb_key: "9172fb113e07d174f618e9042047cc5c4adacc0f"
+data_dir: '/PATH/TO/DATA/DIR/data/Ultrasound-Breast-Image'
+sd_ft_augmented_dir: '/PATH/TO/DATA/DIR/data/augmented_finetuned_sd'
+vae_augmented_dir: "/PATH/TO/DATA/DIR/data/augmented_vae"
+controlnet_ft_augmented_dir: "/PATH/TO/DATA/DIR/data/augmented_finetuned_controlnet"
+output_dir: '/PATH/TO/DATA/DIR/model/output'
+wandb_key: "YOUR_WANDB_KEY"
 model:
   baseline: baseline_model.pth
   regular: reg_augmentation_model.pth
