@@ -17,20 +17,6 @@ from dataset.dataset_helper import transformToGreyScale
 
 label_map = {0: "benign", 1: "normal", 2: "malignant"}  # Map integer labels to strings
 
-def create_edgemap(image):
-    # Convert tensor to numpy array and scale values
-    org_image_np = (image.permute(1, 2, 0).cpu().numpy() * 255).astype(np.uint8)
-    
-    # Apply Canny edge detection
-    canny_image = cv2.Canny(org_image_np, 50, 150)
-    
-    # Convert Canny image to RGB (expected input for pipeline)
-    canny_image_rgb = cv2.cvtColor(canny_image, cv2.COLOR_GRAY2RGB)
-
-    # Convert numpy array to PIL Image for pipeline
-    canny_image_pil = Image.fromarray(canny_image_rgb)
-
-    return canny_image_pil
 
 def fine_tune(config, dataset, mask_dataset, key, device, epochs=5, wandb_log=False):
     if wandb_log:
@@ -44,7 +30,7 @@ def fine_tune(config, dataset, mask_dataset, key, device, epochs=5, wandb_log=Fa
     base_model = StableDiffusionPipeline.from_pretrained("stable-diffusion-v1-5/stable-diffusion-v1-5", torch_dtype=torch.float16).to(device)
     lora_model_path = f"{config['output_dir']}/fine_tuned_lora_weights_{key}"
     base_model.unet = PeftModel.from_pretrained(base_model.unet, lora_model_path)
-    controlnet = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-canny").to(device, torch.float16)
+    controlnet = ControlNetModel.from_pretrained("lllyasviel/control_v11p_sd15_seg").to(device, torch.float16)
     
     # Integrate ControlNet with the LoRA-fine-tuned base model
     pipe = StableDiffusionControlNetPipeline(
@@ -133,15 +119,14 @@ def fine_tune(config, dataset, mask_dataset, key, device, epochs=5, wandb_log=Fa
     prompt = text_prompts[key]
     os.makedirs(f"{output_dir}/{key}", exist_ok=True)
     for j in range(200):  # Generate 5 images per prompt
-        org_image, _ = dataset[j]
         mask_image, _ = mask_dataset[j]
         
-        combined_image = 0.8*org_image+1.5*mask_image
-        edgemap = create_edgemap(combined_image)
+        mask_image_np = (mask_image.permute(1, 2, 0).cpu().numpy() * 255).astype(np.uint8)
+        mask_image_pil = Image.fromarray(mask_image_np)
 
         # Generate image using the pipeline
         with autocast(device_type="cuda", dtype=torch.float16):
-            generated_image = pipe(prompt=prompt, image=edgemap).images[0]
+            generated_image = pipe(prompt=prompt, image=mask_image_pil).images[0]
 
         generated_image.save(f"{output_dir}/{key}/{key}_{j}.png")
 
