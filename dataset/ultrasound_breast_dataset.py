@@ -7,7 +7,7 @@ from torch.utils.data.dataset import Dataset
 
 
 class UltrasoundBreastDataset(Dataset):
-    def __init__(self, root_dir, transform=None, as_vector=False):
+    def __init__(self, root_dir, transform=None, as_vector=False, mask=False):
         """
         Args:
             root_dir (str): Root directory containing subfolders for benign, normal, and malignant images.
@@ -17,6 +17,7 @@ class UltrasoundBreastDataset(Dataset):
         """
         self.root_dir = root_dir
         self.transform = transform
+        self.mask = mask
         self.as_vector = as_vector  # Whether to flatten images into vectors
         self.data = self._load_data()
 
@@ -34,9 +35,14 @@ class UltrasoundBreastDataset(Dataset):
                 elif label_dir == "malignant":
                     label = 2
                 for img_name in os.listdir(label_dir_path):
-                    if "mask" not in img_name:  # Skip mask images
-                        img_path = os.path.join(label_dir, img_name)
-                        data.append((img_path, label))
+                    if not self.mask:
+                        if "mask" not in img_name:  # Skip mask images
+                            img_path = os.path.join(label_dir, img_name)
+                            data.append((img_path, label))
+                    else:
+                        if "mask" in img_name:  # get only mask images
+                            img_path = os.path.join(label_dir, img_name)
+                            data.append((img_path, label))
         return data
 
     def __len__(self):
