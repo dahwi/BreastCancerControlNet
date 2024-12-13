@@ -117,7 +117,7 @@ def fine_tune(config, dataset, mask_dataset, key, device, epochs=5, wandb_log=Fa
         for j in range(2):  # Generate 5 images per prompt
             random_idx = torch.randint(len(dataset), (1,)).item()
             org_image, _ = dataset[random_idx]
-            mask_image, _ = dataset[random_idx]
+            mask_image, _ = mask_dataset[random_idx]
             # Convert tensor to numpy array and scale values
             org_image_np = (mask_image.permute(1, 2, 0).cpu().numpy() * 255).astype(np.uint8)
             
