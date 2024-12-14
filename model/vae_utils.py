@@ -93,7 +93,7 @@ def sample(config, model, class_label, num_samples, latent_dim, num_classes):
         x_recon = model.decode(z, class_labels)  # (num_samples, input_channels, height, width)
 
     # Save images
-    output_dir = config['controlnet_ft_augmented_dir']
+    output_dir = config['vae_augmented_dir']
     output_dir = os.path.join(output_dir, label_to_name[class_label])
     os.makedirs(output_dir, exist_ok=True)
     for i in range(num_samples):
