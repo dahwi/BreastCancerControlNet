@@ -36,7 +36,7 @@ def main(config_file_path, args):
         vae.load_state_dict(torch.load(model_path))
 
         for i in range(vae_config['num_classes']):
-            sample(vae, i, int(len(dataset) / vae_config['num_classes']), vae_config['latent_dim'], vae_config['num_classes'])
+            sample(config, vae, i, int(len(dataset) / vae_config['num_classes']), vae_config['latent_dim'], vae_config['num_classes'])
 
     # Evaluate accuracy
     elif args.accuracy:

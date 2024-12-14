@@ -78,7 +78,7 @@ def train(config, dataloader, latent_dim, num_classes, input_channels, num_epoch
     torch.save(model.state_dict(), model_path)
     print(f'Best model saved to {model_path}')
 
-def sample(model, class_label, num_samples, latent_dim, num_classes):
+def sample(config, model, class_label, num_samples, latent_dim, num_classes):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
@@ -93,8 +93,8 @@ def sample(model, class_label, num_samples, latent_dim, num_classes):
         x_recon = model.decode(z, class_labels)  # (num_samples, input_channels, height, width)
 
     # Save images
-    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    output_dir = os.path.join(parent_dir, 'augmented_vae', label_to_name[class_label])
+    output_dir = config['vae_augmented_dir']
+    output_dir = os.path.join(output_dir, label_to_name[class_label])
     os.makedirs(output_dir, exist_ok=True)
     for i in range(num_samples):
         image = ToPILImage()(x_recon[i])

@@ -16,4 +16,4 @@ vae:
   num_classes: 3
   input_channels: 3
   batch_size: 16
-  num_epochs: 1
+  num_epochs: 100
