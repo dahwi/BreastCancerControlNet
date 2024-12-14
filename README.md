@@ -1,6 +1,4 @@
-# BreastCancerControlNet: Enhancing Breast Cancer Classification with ControlNet
-
-**BreastCancerControlNet** is a research project that explores the use of ControlNet, a diffusion-based generative model, to augment breast cancer imaging data. The goal is to improve breast cancer classification accuracy by leveraging data generation techniques using generative AI models.
+# Enhancing Breast Cancer Classification with ControlNet
 
 ## **Overview**
 
@@ -20,19 +18,6 @@ Breast cancer classification relies heavily on high-quality and diverse datasets
 The project uses a dataset of [Breast Ultrasound Images](https://www.kaggle.com/datasets/aryashah2k/breast-ultrasound-images-dataset/) with labels: normal, malignant, and benign. The initial dataset consists of 780 images.
 
 
-<!-- ### **Data Inputs**
-- Grayscale mammograms or ultrasound images.
-- Corresponding edge maps or segmentation masks.
-
-### **Synthetic Data Outputs**
-- Grayscale images conditioned on input edge maps.
-- Optionally labeled as "cancerous" or "non-cancerous." -->
-
-<!-- ## **Model Architecture**
-- **ControlNet**: A diffusion-based model fine-tuned for generating breast cancer images.
-- **Conditional Latent Vectors**: Used to guide image generation based on cancer/no-cancer labels.
-- **Evaluation Framework**: Combines perceptual and classification-based metrics to validate synthetic data.
-<!-->
 
 ## **Installation**
 Clone this repository and install the required dependencies:
@@ -40,9 +25,12 @@ Clone this repository and install the required dependencies:
 ```bash
 git clone
 cd BreastCancerControlNet
+python -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
-export PYTHONPATH=/PATH_TO_PROJECT/BreastCancerControlNet:$PYTHONPATH
+# Make sure you are in project root dir
 export BASE_DIR=$(pwd)
+export PYTHONPATH=$BASE_DIR/BreastCancerControlNet:$PYTHONPATH
 export WANDB_KEY="your-wandb-api-key-here"
 ```
 
