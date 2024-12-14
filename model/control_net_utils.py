@@ -48,8 +48,8 @@ def fine_tune(config, dataset, mask_dataset, key, device, epochs=5, wandb_log=Fa
     scheduler = CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 
     text_prompts = {
-        "benign": "Grayscale mammogram cross-section image with an oval, dark hypoechoic region, smooth well-defined borders, surrounded by lighter, layered fibrous structures, no text in the image",
-        "malignant": "Grayscale mammogram cross-section image of malignant tumor. Edge map defines the tumor form and should be black. The surrounding should be smooth color trainsition to light greys, no text in the image",
+        "benign": "Grayscale mammogram cross-section image with only one oval, dark hypoechoic region, smooth well-defined borders, surrounded by lighter, layered fibrous structures, no text in the image",
+        "malignant": "Grayscale mammogram cross-section image of malignant tumor. Masked Segmetation defines the tumor form and should be black. The surrounding should be smooth color trainsition to light greys, no text in the image",
         "normal": "Grayscale mammogram cross-section image with smooth, uniform fibrous layers, consistent textures, and gradual transitions between light and dark regions across the tissue, no text in the image"
     }
 
