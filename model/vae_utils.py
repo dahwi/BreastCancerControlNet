@@ -30,7 +30,7 @@ def get_dataset_vae(path):
 
     return dataset
 
-def train(dataloader, latent_dim, num_classes, input_channels, num_epochs=20):
+def train(config, dataloader, latent_dim, num_classes, input_channels, num_epochs=20):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -73,10 +73,7 @@ def train(dataloader, latent_dim, num_classes, input_channels, num_epochs=20):
             print(f"New best model saved with loss: {best_loss:.4f}")
 
     # Save the model
-    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    models_dir = os.path.join(parent_dir, 'scripts', 'models')
-    os.makedirs(models_dir, exist_ok=True)
-    model_path = os.path.join(models_dir, "vae.pth")
+    model_path = os.path.join(config["output_dir"], "vae.pth")
     model.load_state_dict(best_model_weights)
     torch.save(model.state_dict(), model_path)
     print(f'Best model saved to {model_path}')

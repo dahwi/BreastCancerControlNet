@@ -18,7 +18,6 @@ def main(config_file_path='config/config.yaml', finetune=False, wandb_log=False)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
-
      
     if finetune:
         label_map = {"benign": 0, "normal": 1, "malignant": 2}

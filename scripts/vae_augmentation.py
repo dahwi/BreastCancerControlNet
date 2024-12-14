@@ -27,12 +27,12 @@ def main(config_file_path, args):
     # Train the VAE
     if args.train:
         dataloader = DataLoader(dataset, batch_size=vae_config['batch_size'], shuffle=True)
-        train(dataloader, vae_config['latent_dim'], vae_config['num_classes'], vae_config['input_channels'], vae_config['num_epochs'])
+        train(config, dataloader, vae_config['latent_dim'], vae_config['num_classes'], vae_config['input_channels'], vae_config['num_epochs'])
     
     # Generate samples
     elif args.generate:
         vae = ClassConditionedVAE(vae_config['input_channels'], vae_config['latent_dim'], vae_config['num_classes'])
-        model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models', 'vae.pth')
+        model_path = os.path.join(config["output_dir"], 'vae.pth')
         vae.load_state_dict(torch.load(model_path))
 
         for i in range(vae_config['num_classes']):
