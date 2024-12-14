@@ -35,7 +35,7 @@ def main(config_file_path='config/config.yaml', finetune=False, wandb_log=False)
 
     combined_dataset = ConcatDataset([dataset, augmented_dataset])
 
-    run('controlnet', combined_dataset, config, device, wandb_log=wandb_log)
+    run('control_net', combined_dataset, config, device, wandb_log=wandb_log)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="ControlNet Generation Script")
