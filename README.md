@@ -1,6 +1,6 @@
 # BreastCancerControlNet: Enhancing Breast Cancer Classification with ControlNet
 
-**BreastCancerControlNet** is a research project that explores the use of ControlNet, a diffusion-based generative model, to augment breast cancer imaging data. The goal is to improve breast cancer classification accuracy by leveraging advanced data augmentation and synthetic data generation techniques.
+**BreastCancerControlNet** is a research project that explores the use of ControlNet, a diffusion-based generative model, to augment breast cancer imaging data. The goal is to improve breast cancer classification accuracy by leveraging data generation techniques using generative AI models.
 
 ## **Overview**
 
@@ -17,7 +17,7 @@ Breast cancer classification relies heavily on high-quality and diverse datasets
 
 
 ## **Dataset**
-The project uses a dataset of breast ultrasound images with labels: normal, malignant, and benign. The initial dataset consists of 780 images. [Link to dataset](https://www.kaggle.com/datasets/aryashah2k/breast-ultrasound-images-dataset/).
+The project uses a dataset of [Breast Ultrasound Images](https://www.kaggle.com/datasets/aryashah2k/breast-ultrasound-images-dataset/) with labels: normal, malignant, and benign. The initial dataset consists of 780 images.
 
 
 <!-- ### **Data Inputs**
